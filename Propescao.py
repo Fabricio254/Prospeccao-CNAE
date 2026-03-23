@@ -85,7 +85,7 @@ components.html("""
             p.localStorage.setItem(KEY, theme);
             p.document.body.setAttribute('data-theme', theme);
             var btn = p.document.getElementById('locvix-theme-btn');
-            if (btn) btn.textContent = theme === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19';
+            if (btn) btn.textContent = theme === 'dark' ? '\\u2600\\uFE0F' : '\\uD83C\\uDF19';
         } catch(e) {}
     }
     window.parent.locvixToggleTheme = function() {
@@ -101,7 +101,7 @@ components.html("""
             }
             var btn = window.parent.document.getElementById('locvix-theme-btn');
             if (btn) {
-                var expected = theme === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19';
+                var expected = theme === 'dark' ? '\\u2600\\uFE0F' : '\\uD83C\\uDF19';
                 if (btn.textContent !== expected) btn.textContent = expected;
             }
         } catch(e) {}
