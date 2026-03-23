@@ -105,10 +105,35 @@ components.html("""
             }
         } catch(e) {}
     }
-    applyTheme(window.parent.localStorage.getItem(KEY) || 'light');
-    bindBtn();
+    // ── Forçar sidebar aberta via CSS + MutationObserver ──
+    var _forceDeadline = 0;
+    var _forceObs = null;
+    function forceSidebarOpen(p) {
+        var sb = p.document.querySelector('section[data-testid="stSidebar"]');
+        if (!sb) return;
+        function applyForce() {
+            sb.style.setProperty('transform', 'translateX(0)', 'important');
+            sb.style.setProperty('width', '21rem', 'important');
+            sb.style.setProperty('min-width', '1px', 'important');
+            sb.style.setProperty('visibility', 'visible', 'important');
+            var inner = sb.firstElementChild;
+            if (inner) {
+                inner.style.setProperty('transform', 'translateX(0)', 'important');
+                inner.style.setProperty('visibility', 'visible', 'important');
+            }
+        }
+        applyForce();
+        _forceDeadline = Date.now() + 5000;
+        if (!_forceObs) {
+            _forceObs = new p.MutationObserver(function() {
+                if (Date.now() < _forceDeadline) applyForce();
+            });
+            _forceObs.observe(sb, { attributes: true, attributeFilter: ['style', 'class'] });
+            var inner2 = sb.firstElementChild;
+            if (inner2) _forceObs.observe(inner2, { attributes: true, attributeFilter: ['style', 'class'] });
+        }
+    }
 
-    // ── Botão customizado para abrir sidebar ──
     function injectSidebarBtn() {
         try {
             var p = window.parent;
@@ -117,25 +142,26 @@ components.html("""
             btn.id = 'locvix-sb-btn';
             btn.title = 'Abrir menu de filtros';
             btn.innerHTML = '<span style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:13px;font-weight:800;letter-spacing:2px;pointer-events:none">&equiv; FILTROS</span>';
-            btn.style.cssText = 'position:fixed;left:0;top:50%;transform:translateY(-50%);background:#e67e22;color:white;border-radius:0 12px 12px 0;padding:18px 7px;cursor:pointer;z-index:2147483647;box-shadow:4px 0 16px rgba(230,126,34,0.7);display:none;align-items:center;min-height:80px;animation:sb-pulse 2s ease-in-out infinite;';
+            btn.style.cssText = 'position:fixed;left:0;top:50%;transform:translateY(-50%);background:#e67e22;color:white;border-radius:0 12px 12px 0;padding:18px 7px;cursor:pointer;z-index:2147483647;box-shadow:4px 0 16px rgba(230,126,34,0.7);display:none;align-items:center;min-height:80px;';
             var styleEl = p.document.createElement('style');
-            styleEl.textContent = '@keyframes sb-pulse{0%,100%{box-shadow:4px 0 16px rgba(230,126,34,0.7)}50%{box-shadow:4px 0 28px rgba(230,126,34,1)}}';
+            styleEl.textContent = '@keyframes sb-pulse{0%,100%{box-shadow:4px 0 16px rgba(230,126,34,0.7)}50%{box-shadow:4px 0 28px rgba(230,126,34,1)}}#locvix-sb-btn{animation:sb-pulse 2s ease-in-out infinite}';
             p.document.head.appendChild(styleEl);
             btn.addEventListener('click', function() {
                 try {
-                    // Try native Streamlit sidebar toggle (multiple selectors)
-                    var native = p.document.querySelector('[data-testid="collapsedControl"]')
-                              || p.document.querySelector('button[aria-label*="idebar"]')
-                              || p.document.querySelector('button[aria-label*="ilter"]');
-                    if (native) { native.click(); return; }
-                    // Fallback: make sidebar visible directly
-                    var sb = p.document.querySelector('section[data-testid="stSidebar"]');
-                    if (sb) { sb.style.display = ''; sb.style.visibility = 'visible'; sb.style.width = ''; }
+                    var p = window.parent;
+                    // Tenta clicar botão nativo do Streamlit
+                    var native = p.document.querySelector('[data-testid="collapsedControl"]');
+                    if (native) native.click();
+                    // Garante abertura via CSS + MutationObserver (funciona mesmo se React brigar)
+                    forceSidebarOpen(p);
                 } catch(e) {}
             });
             p.document.body.appendChild(btn);
         } catch(e) {}
     }
+
+    applyTheme(window.parent.localStorage.getItem(KEY) || 'light');
+    bindBtn();
     injectSidebarBtn();
 
     setInterval(function() {
@@ -145,17 +171,17 @@ components.html("""
             if (p.document.body.getAttribute('data-theme') !== theme) {
                 p.document.body.setAttribute('data-theme', theme);
             }
-            var btn = p.document.getElementById('locvix-theme-btn');
-            if (btn) {
+            var tBtn = p.document.getElementById('locvix-theme-btn');
+            if (tBtn) {
                 var expected = theme === 'dark' ? '\\u2600\\uFE0F' : '\\uD83C\\uDF19';
-                if (btn.textContent !== expected) btn.textContent = expected;
-                if (!btn._lbound) { btn.addEventListener('click', toggleTheme); btn._lbound = true; }
+                if (tBtn.textContent !== expected) tBtn.textContent = expected;
+                if (!tBtn._lbound) { tBtn.addEventListener('click', toggleTheme); tBtn._lbound = true; }
             }
-            // Show/hide sidebar button based on sidebar width
             var sbBtn = p.document.getElementById('locvix-sb-btn');
             if (!sbBtn) { injectSidebarBtn(); return; }
             var sidebar = p.document.querySelector('section[data-testid="stSidebar"]');
-            var sidebarOpen = sidebar && sidebar.getBoundingClientRect().width > 50;
+            // Usa .left >= -10 em vez de .width: translateX(-100%) deixa width positivo mas left negativo
+            var sidebarOpen = sidebar && sidebar.getBoundingClientRect().left >= -10;
             sbBtn.style.display = sidebarOpen ? 'none' : 'flex';
         } catch(e) {}
     }, 300);
