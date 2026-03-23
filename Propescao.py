@@ -568,6 +568,7 @@ def buscar_google_maps(termo: str, cidade: str, estado: str, api_key: str, proxi
 
 st.markdown('<p class="main-title">🏗️ Locvix — Prospecção de Clientes</p>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">Encontre empresas que podem contratar locação de guindastes e maquinário pesado</p>', unsafe_allow_html=True)
+st.markdown('<p style="font-size:0.78rem; color:#888; margin-top:-0.8rem; margin-bottom:1rem;">Desenvolvido por Fabrício Zamprogno</p>', unsafe_allow_html=True)
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
