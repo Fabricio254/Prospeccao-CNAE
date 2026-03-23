@@ -198,33 +198,29 @@ ESTADOS = ["", "AC","AL","AP","AM","BA","CE","DF","ES","GO",
 # ══════════════════════════════════════════════════════════════════════════════
 
 def buscar_por_cnae(cnae: str, municipio: str, estado: str, pagina: int = 1):
-    url = "https://api.casadosdados.com.br/v2/public/cnpj/pesquisa"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "User-Agent": "Mozilla/5.0",
-    }
-    payload: dict = {
-        "query": {"cnae_fiscal_principal": {"codigo": cnae}},
-        "range_query": {},
-        "extras": {
-            "somente_mei": False, "excluir_mei": False,
-            "com_contato_telefonico": False, "com_email": False,
-            "incluir_atividade_secundaria": False, "com_natureza_juridica": []
-        },
-        "page": pagina
-    }
+    """Busca empresas por CNAE via publica.cnpj.ws (sem Cloudflare)."""
+    url = "https://publica.cnpj.ws/empresas"
+    params: dict = {"cnae_principal": cnae, "pagina": pagina}
     if municipio.strip():
-        payload["query"]["municipio"] = municipio.strip().upper()
+        params["municipio"] = municipio.strip().upper()
     if estado.strip():
-        payload["query"]["uf"] = estado.strip().upper()
+        params["uf"] = estado.strip().upper()
 
+    headers = {
+        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    }
     for tentativa in range(3):
         try:
-            r = requests.post(url, json=payload, headers=headers, timeout=25)
+            r = requests.get(url, params=params, headers=headers, timeout=25)
             if r.status_code == 200:
-                resultado = r.json().get("data", {}).get("cnpj", [])
-                return resultado, None
+                data = r.json()
+                # API retorna lista ou dict com chave 'data'
+                if isinstance(data, list):
+                    return data, None
+                if isinstance(data, dict):
+                    return data.get("data", data.get("empresas", [])), None
+                return [], None
             if r.status_code in (429, 503):
                 time.sleep(3 * (tentativa + 1))
                 continue
@@ -251,7 +247,52 @@ def buscar_cnpj(cnpj: str):
     return None
 
 
+def _str(obj, key="descricao"):
+    """Extrai string de campo que pode ser str ou dict."""
+    if obj is None:
+        return ""
+    if isinstance(obj, dict):
+        return str(obj.get(key) or obj.get("nome") or obj.get("sigla") or "")
+    return str(obj)
+
+
+def formatar_cnpjws(emp: dict) -> dict:
+    """Normaliza resposta da publica.cnpj.ws para o formato padrão da tabela."""
+    est  = emp.get("estabelecimento") or {}
+    cnae_obj = est.get("atividade_principal") or est.get("cnae_fiscal") or {}
+    mun  = est.get("municipio") or {}
+    uf   = est.get("estado") or {}
+    nat  = emp.get("natureza_juridica") or {}
+    porte = emp.get("porte") or {}
+    cap  = emp.get("capital_social") or 0
+    try:    cap_fmt = f"R$ {float(str(cap).replace(',', '.')):,.2f}"
+    except: cap_fmt = str(cap)
+    tel1 = (est.get("ddd1") or "") + (est.get("telefone1") or "")
+    tel2 = (est.get("ddd2") or "") + (est.get("telefone2") or "")
+    return {
+        "CNPJ":              est.get("cnpj") or emp.get("cnpj") or "",
+        "Razão Social":      emp.get("razao_social") or "",
+        "Nome Fantasia":     est.get("nome_fantasia") or "",
+        "Situação":          _str(est.get("situacao_cadastral")),
+        "Telefone 1":        tel1,
+        "Telefone 2":        tel2,
+        "Email":             est.get("email") or "",
+        "Município":         _str(mun, "nome"),
+        "UF":                _str(uf, "sigla"),
+        "Logradouro":        f"{est.get('logradouro','') or ''} {est.get('numero','') or ''} {est.get('complemento','') or ''}".strip(),
+        "Bairro":            est.get("bairro") or "",
+        "CEP":               est.get("cep") or "",
+        "Porte":             _str(porte),
+        "Natureza Jurídica": _str(nat),
+        "Capital Social":    cap_fmt,
+        "Data de Abertura":  est.get("data_inicio_atividade") or "",
+        "CNAE Principal":    str(cnae_obj.get("codigo") if isinstance(cnae_obj, dict) else cnae_obj or ""),
+        "Descrição CNAE":    cnae_obj.get("descricao") if isinstance(cnae_obj, dict) else "",
+    }
+
+
 def formatar(emp: dict) -> dict:
+    """Normaliza resposta da BrasilAPI / ReceitaWS (consulta CNPJ individual)."""
     tel  = (emp.get("ddd_telefone_1") or "") + (emp.get("telefone_1") or "")
     tel2 = (emp.get("ddd_telefone_2") or "") + (emp.get("telefone_2") or "")
     cap  = emp.get("capital_social") or 0
@@ -439,7 +480,7 @@ if aba == "🔍 Buscar por Segmento / CNAE" and btn_buscar:
         st.error("Nenhuma empresa encontrada. Tente outro CNAE, município ou estado.")
         st.stop()
 
-    df = pd.DataFrame([formatar(e) for e in todas])
+    df = pd.DataFrame([formatar_cnpjws(e) for e in todas])
     df = df.drop_duplicates(subset=["CNPJ"])  # remove duplicatas entre CNAEs
 
     # ── Métricas ──────────────────────────────────────────────────────────────
