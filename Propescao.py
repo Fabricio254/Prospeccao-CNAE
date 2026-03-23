@@ -231,6 +231,17 @@ components.html("""
                 if (tBtn.textContent !== expected) tBtn.textContent = expected;
                 if (!tBtn._lbound) { tBtn.addEventListener('click', toggleTheme); tBtn._lbound = true; }
             }
+            // Força tags do multiselect para vermelho no dark mode
+            if (theme === 'dark') {
+                p.document.querySelectorAll('[data-baseweb="tag"]').forEach(function(tag) {
+                    tag.style.setProperty('background-color', '#e53935', 'important');
+                    tag.style.setProperty('border-color', '#c62828', 'important');
+                    tag.querySelectorAll('span, button, svg').forEach(function(child) {
+                        child.style.setProperty('color', '#ffffff', 'important');
+                        child.style.setProperty('fill', '#ffffff', 'important');
+                    });
+                });
+            }
         } catch(e) {}
     }, 300);
 })();
