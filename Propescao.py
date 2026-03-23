@@ -13,6 +13,32 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# ── Autenticação ──────────────────────────────────────────────────────────────
+if "autenticado" not in st.session_state:
+    st.session_state.autenticado = False
+
+if not st.session_state.autenticado:
+    st.markdown("""
+    <style>
+        .login-box {max-width:360px; margin:10vh auto; text-align:center;}
+        .login-titulo {font-size:2rem; font-weight:700; color:#e67e22; margin-bottom:0.3rem;}
+        .login-sub {color:#888; margin-bottom:1.5rem;}
+    </style>
+    <div class="login-box">
+        <p class="login-titulo">🏗️ Locvix</p>
+        <p class="login-sub">Prospecção de Clientes</p>
+    </div>
+    """, unsafe_allow_html=True)
+    senha = st.text_input("Senha de acesso:", type="password", placeholder="Digite a senha…")
+    if st.button("Entrar", type="primary", use_container_width=False):
+        if senha == "zampa":
+            st.session_state.autenticado = True
+            st.rerun()
+        else:
+            st.error("Senha incorreta.")
+    st.stop()
+
+
 st.markdown("""
 <style>
     .main-title {font-size:2.2rem; font-weight:700; color:#e67e22; margin-bottom:0.2rem;}
