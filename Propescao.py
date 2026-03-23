@@ -38,34 +38,6 @@ st.markdown("""
     }
     #locvix-theme-btn:hover { transform: scale(1.12); }
 
-    /* ── Botão expandir sidebar (seta >) — mais visível ── */
-    [data-testid="collapsedControl"] {
-        width: 32px !important;
-        height: 80px !important;
-        background: #e67e22 !important;
-        border-radius: 0 12px 12px 0 !important;
-        border: none !important;
-        box-shadow: 3px 0 12px rgba(230,126,34,0.55) !important;
-        animation: locvix-pulse 2s ease-in-out infinite;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-    }
-    [data-testid="collapsedControl"] svg {
-        fill: #fff !important;
-        width: 20px !important;
-        height: 20px !important;
-    }
-    [data-testid="collapsedControl"]:hover {
-        background: #cf6d17 !important;
-        width: 38px !important;
-        box-shadow: 4px 0 18px rgba(230,126,34,0.75) !important;
-    }
-    @keyframes locvix-pulse {
-        0%, 100% { box-shadow: 3px 0 12px rgba(230,126,34,0.55); }
-        50%       { box-shadow: 3px 0 22px rgba(230,126,34,0.9); }
-    }
-
     /* ── Dark mode ── */
     body[data-theme="dark"] { color-scheme: dark; }
     body[data-theme="dark"] .stApp,
@@ -135,18 +107,56 @@ components.html("""
     }
     applyTheme(window.parent.localStorage.getItem(KEY) || 'light');
     bindBtn();
+
+    // ── Botão customizado para abrir sidebar ──
+    function injectSidebarBtn() {
+        try {
+            var p = window.parent;
+            if (p.document.getElementById('locvix-sb-btn')) return;
+            var btn = p.document.createElement('div');
+            btn.id = 'locvix-sb-btn';
+            btn.title = 'Abrir menu de filtros';
+            btn.innerHTML = '<span style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:13px;font-weight:800;letter-spacing:2px;pointer-events:none">&equiv; FILTROS</span>';
+            btn.style.cssText = 'position:fixed;left:0;top:50%;transform:translateY(-50%);background:#e67e22;color:white;border-radius:0 12px 12px 0;padding:18px 7px;cursor:pointer;z-index:2147483647;box-shadow:4px 0 16px rgba(230,126,34,0.7);display:none;align-items:center;min-height:80px;animation:sb-pulse 2s ease-in-out infinite;';
+            var styleEl = p.document.createElement('style');
+            styleEl.textContent = '@keyframes sb-pulse{0%,100%{box-shadow:4px 0 16px rgba(230,126,34,0.7)}50%{box-shadow:4px 0 28px rgba(230,126,34,1)}}';
+            p.document.head.appendChild(styleEl);
+            btn.addEventListener('click', function() {
+                try {
+                    // Try native Streamlit sidebar toggle (multiple selectors)
+                    var native = p.document.querySelector('[data-testid="collapsedControl"]')
+                              || p.document.querySelector('button[aria-label*="idebar"]')
+                              || p.document.querySelector('button[aria-label*="ilter"]');
+                    if (native) { native.click(); return; }
+                    // Fallback: make sidebar visible directly
+                    var sb = p.document.querySelector('section[data-testid="stSidebar"]');
+                    if (sb) { sb.style.display = ''; sb.style.visibility = 'visible'; sb.style.width = ''; }
+                } catch(e) {}
+            });
+            p.document.body.appendChild(btn);
+        } catch(e) {}
+    }
+    injectSidebarBtn();
+
     setInterval(function() {
         try {
-            var theme = window.parent.localStorage.getItem(KEY) || 'light';
-            if (window.parent.document.body.getAttribute('data-theme') !== theme) {
-                window.parent.document.body.setAttribute('data-theme', theme);
+            var p = window.parent;
+            var theme = p.localStorage.getItem(KEY) || 'light';
+            if (p.document.body.getAttribute('data-theme') !== theme) {
+                p.document.body.setAttribute('data-theme', theme);
             }
-            var btn = window.parent.document.getElementById('locvix-theme-btn');
+            var btn = p.document.getElementById('locvix-theme-btn');
             if (btn) {
                 var expected = theme === 'dark' ? '\\u2600\\uFE0F' : '\\uD83C\\uDF19';
                 if (btn.textContent !== expected) btn.textContent = expected;
                 if (!btn._lbound) { btn.addEventListener('click', toggleTheme); btn._lbound = true; }
             }
+            // Show/hide sidebar button based on sidebar width
+            var sbBtn = p.document.getElementById('locvix-sb-btn');
+            if (!sbBtn) { injectSidebarBtn(); return; }
+            var sidebar = p.document.querySelector('section[data-testid="stSidebar"]');
+            var sidebarOpen = sidebar && sidebar.getBoundingClientRect().width > 50;
+            sbBtn.style.display = sidebarOpen ? 'none' : 'flex';
         } catch(e) {}
     }, 300);
 })();
