@@ -20,58 +20,61 @@ if "autenticado" not in st.session_state:
 if not st.session_state.autenticado:
     st.markdown("""
     <style>
-        /* Remove padding padrão do Streamlit na tela de login */
+        /* Empurra o conteúdo para o centro vertical da tela */
         [data-testid="stAppViewContainer"] > .main > .block-container {
-            padding-top: 0 !important;
+            padding-top: 8vh !important;
             padding-bottom: 0 !important;
         }
-        /* Fundo da tela de login */
-        .login-page-bg {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 92vh;
-            width: 100%;
+        /* Remove o gap entre elementos da coluna central (une cabeçalho + form) */
+        [data-testid="stColumn"]:nth-child(2) [data-testid="stVerticalBlock"] {
+            gap: 0 !important;
         }
-        /* Card central */
-        .login-card {
+        /* Topo do card — cantos superiores arredondados */
+        .lv-head {
             background: #ffffff;
-            border-radius: 16px;
-            box-shadow: 0 8px 40px rgba(0,0,0,0.13);
-            padding: 3rem 2.5rem 2.5rem 2.5rem;
-            max-width: 400px;
-            width: 100%;
+            border-radius: 16px 16px 0 0;
+            padding: 2.5rem 2rem 1rem 2rem;
             text-align: center;
+            box-shadow: 0 -4px 30px rgba(0,0,0,.09),
+                         4px 0 12px rgba(0,0,0,.05),
+                        -4px 0 12px rgba(0,0,0,.05);
         }
-        .login-icon  { font-size: 3rem; margin-bottom: 0.3rem; }
-        .login-titulo {
-            font-size: 2rem; font-weight: 700;
-            color: #e67e22; margin: 0 0 0.2rem 0;
+        .lv-icon  { font-size: 3rem; display: block; margin-bottom: 0.35rem; }
+        .lv-title { font-size: 1.85rem; font-weight: 700; color: #e67e22;
+                    margin: 0 0 0.15rem 0; }
+        .lv-sub   { font-size: 0.875rem; color: #999; margin: 0 0 0.8rem 0; }
+        .lv-hr    { border: none; border-top: 1px solid #efefef; margin: 0; }
+        /* Base do card — cantos inferiores arredondados */
+        [data-testid="stForm"] {
+            background: #ffffff !important;
+            border: none !important;
+            border-radius: 0 0 16px 16px !important;
+            padding: 1.2rem 1.5rem 1.8rem 1.5rem !important;
+            box-shadow:  4px 8px 30px rgba(0,0,0,.09),
+                        -4px 0  12px rgba(0,0,0,.05) !important;
         }
-        .login-sub {
-            font-size: 0.95rem; color: #888;
-            margin: 0 0 2rem 0;
-        }
-        .login-divider {
-            border: none; border-top: 1px solid #f0f0f0;
-            margin: 0 0 1.5rem 0;
+        /* Remove borda interna padrão do st.form */
+        [data-testid="stFormBorderWrapper"] {
+            border: none !important;
+            padding: 0 !important;
         }
     </style>
-    <div class="login-page-bg">
-        <div class="login-card">
-            <div class="login-icon">🏗️</div>
-            <p class="login-titulo">Locvix</p>
-            <p class="login-sub">Prospecção de Clientes</p>
-            <hr class="login-divider">
-        </div>
-    </div>
     """, unsafe_allow_html=True)
-    # Centraliza os widgets usando colunas (1/3 - 1/3 - 1/3)
     _, col_c, _ = st.columns([1, 1, 1])
     with col_c:
-        senha = st.text_input("Senha de acesso:", type="password",
-                              placeholder="Digite a senha…", label_visibility="collapsed")
-        if st.button("Entrar", type="primary", use_container_width=True):
+        st.markdown("""
+        <div class="lv-head">
+            <span class="lv-icon">🏗️</span>
+            <p class="lv-title">Locvix</p>
+            <p class="lv-sub">Prospecção de Clientes</p>
+            <hr class="lv-hr">
+        </div>
+        """, unsafe_allow_html=True)
+        with st.form("login_form"):
+            senha = st.text_input("", type="password", placeholder="Digite a senha…")
+            submitted = st.form_submit_button("Entrar", type="primary",
+                                              use_container_width=True)
+        if submitted:
             if senha == "zampa":
                 st.session_state.autenticado = True
                 st.rerun()
