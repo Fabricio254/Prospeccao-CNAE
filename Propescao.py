@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import requests
 import pandas as pd
 import time
@@ -22,8 +23,92 @@ st.markdown("""
     header[data-testid="stHeader"] {display: none !important;}
     #MainMenu {display: none !important;}
     footer {display: none !important;}
+
+    /* ── Botão flutuante claro/escuro ── */
+    #locvix-theme-btn {
+        position: fixed; left: 16px; bottom: 88px;
+        width: 46px; height: 46px; border-radius: 50%;
+        border: 2px solid #ddd; background: #f0f0f0;
+        font-size: 22px; cursor: pointer; z-index: 99999;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+        transition: transform 0.2s; padding: 0;
+        display: flex; align-items: center; justify-content: center;
+    }
+    #locvix-theme-btn:hover { transform: scale(1.12); }
+
+    /* ── Dark mode ── */
+    body[data-theme="dark"] { color-scheme: dark; }
+    body[data-theme="dark"] .stApp,
+    body[data-theme="dark"] [data-testid="stAppViewContainer"] {
+        background-color: #0e1117 !important; color: #e0e0e0 !important;
+    }
+    body[data-theme="dark"] .main .block-container { background-color: #0e1117 !important; }
+    body[data-theme="dark"] section[data-testid="stSidebar"],
+    body[data-theme="dark"] section[data-testid="stSidebar"] > div {
+        background-color: #1a1c24 !important; color: #e0e0e0 !important;
+    }
+    body[data-theme="dark"] p, body[data-theme="dark"] h1, body[data-theme="dark"] h2,
+    body[data-theme="dark"] h3, body[data-theme="dark"] h4, body[data-theme="dark"] label,
+    body[data-theme="dark"] .stMarkdown, body[data-theme="dark"] small {
+        color: #e0e0e0 !important;
+    }
+    body[data-theme="dark"] input, body[data-theme="dark"] textarea {
+        background-color: #262730 !important; color: #fafafa !important;
+        border-color: #555 !important;
+    }
+    body[data-theme="dark"] [data-baseweb="select"] > div,
+    body[data-theme="dark"] [data-baseweb="input"] > div {
+        background-color: #262730 !important; border-color: #555 !important;
+    }
+    body[data-theme="dark"] [data-testid="stMetricValue"],
+    body[data-theme="dark"] [data-testid="stMetricLabel"] { color: #e0e0e0 !important; }
+    body[data-theme="dark"] hr { border-color: #333 !important; }
+    body[data-theme="dark"] .stExpander summary { color: #e0e0e0 !important; }
+    body[data-theme="dark"] .tag-seg {
+        background: #1f1500 !important; color: #ffcf7d !important;
+    }
+    body[data-theme="dark"] .sub-title { color: #999 !important; }
+    body[data-theme="dark"] #locvix-theme-btn {
+        background: #262730 !important; border-color: #555 !important;
+    }
 </style>
+<button id="locvix-theme-btn" onclick="locvixToggleTheme()" title="Alternar tema claro/escuro">🌙</button>
 """, unsafe_allow_html=True)
+
+components.html("""
+<script>
+(function(){
+    var KEY = 'locvix-theme';
+    function applyTheme(theme) {
+        try {
+            var p = window.parent;
+            p.localStorage.setItem(KEY, theme);
+            p.document.body.setAttribute('data-theme', theme);
+            var btn = p.document.getElementById('locvix-theme-btn');
+            if (btn) btn.textContent = theme === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19';
+        } catch(e) {}
+    }
+    window.parent.locvixToggleTheme = function() {
+        var cur = window.parent.localStorage.getItem(KEY) || 'light';
+        applyTheme(cur === 'dark' ? 'light' : 'dark');
+    };
+    applyTheme(window.parent.localStorage.getItem(KEY) || 'light');
+    setInterval(function() {
+        try {
+            var theme = window.parent.localStorage.getItem(KEY) || 'light';
+            if (window.parent.document.body.getAttribute('data-theme') !== theme) {
+                window.parent.document.body.setAttribute('data-theme', theme);
+            }
+            var btn = window.parent.document.getElementById('locvix-theme-btn');
+            if (btn) {
+                var expected = theme === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19';
+                if (btn.textContent !== expected) btn.textContent = expected;
+            }
+        } catch(e) {}
+    }, 300);
+})();
+</script>
+""", height=0, scrolling=False)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # GRUPOS DE CNAE — clientes que CONTRATAM guindastes e maquinário pesado
