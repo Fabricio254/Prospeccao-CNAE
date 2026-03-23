@@ -36,6 +36,34 @@ st.markdown("""
     }
     #locvix-theme-btn:hover { transform: scale(1.12); }
 
+    /* ── Botão expandir sidebar (seta >) — mais visível ── */
+    [data-testid="collapsedControl"] {
+        width: 32px !important;
+        height: 80px !important;
+        background: #e67e22 !important;
+        border-radius: 0 12px 12px 0 !important;
+        border: none !important;
+        box-shadow: 3px 0 12px rgba(230,126,34,0.55) !important;
+        animation: locvix-pulse 2s ease-in-out infinite;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    [data-testid="collapsedControl"] svg {
+        fill: #fff !important;
+        width: 20px !important;
+        height: 20px !important;
+    }
+    [data-testid="collapsedControl"]:hover {
+        background: #cf6d17 !important;
+        width: 38px !important;
+        box-shadow: 4px 0 18px rgba(230,126,34,0.75) !important;
+    }
+    @keyframes locvix-pulse {
+        0%, 100% { box-shadow: 3px 0 12px rgba(230,126,34,0.55); }
+        50%       { box-shadow: 3px 0 22px rgba(230,126,34,0.9); }
+    }
+
     /* ── Dark mode ── */
     body[data-theme="dark"] { color-scheme: dark; }
     body[data-theme="dark"] .stApp,
