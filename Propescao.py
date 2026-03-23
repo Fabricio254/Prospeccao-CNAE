@@ -315,16 +315,20 @@ with st.sidebar:
                 f'<div class="tag-seg">📌 {GRUPOS_CNAE[segmento]["desc"]}</div>',
                 unsafe_allow_html=True
             )
-            cnae_final = st.selectbox(
-                "CNAE:",
+            cnae_final = st.multiselect(
+                "CNAEs selecionados:",
                 list(cnaes_seg.keys()),
-                format_func=lambda x: f"{x} — {cnaes_seg[x]}"
+                default=list(cnaes_seg.keys()),
+                format_func=lambda x: f"{x} — {cnaes_seg[x]}",
+                help="Todos pré-selecionados. Desmarque os que não desejar."
             )
+            if not cnae_final:
+                st.warning("Selecione ao menos um CNAE.")
         else:
+            segmento = ""
             cnae_final = st.text_input("Código CNAE:", placeholder="Ex: 4292801").strip()
             if not cnae_final:
                 st.warning("Digite um código CNAE.")
-                cnae_final = ""
 
         st.divider()
         municipio = st.text_input("Município:", placeholder="Ex: SERRA")
@@ -382,20 +386,32 @@ with st.sidebar:
 # ══════════════════════════════════════════════════════════════════════════════
 if aba == "🔍 Buscar por Segmento / CNAE" and btn_buscar:
 
-    if not cnae_final:
+    # Normaliza: modo manual retorna str, modo segmento retorna lista
+    cnaes_buscar = [cnae_final] if isinstance(cnae_final, str) else list(cnae_final)
+
+    if not cnaes_buscar or (len(cnaes_buscar) == 1 and not cnaes_buscar[0]):
         st.error("Selecione ou informe um CNAE antes de buscar.")
         st.stop()
 
-    desc = TODOS_CNAES.get(cnae_final, cnae_final)
-    st.info(f"**CNAE {cnae_final}** — {desc}")
+    if len(cnaes_buscar) == 1:
+        desc = TODOS_CNAES.get(cnaes_buscar[0], cnaes_buscar[0])
+        st.info(f"**CNAE {cnaes_buscar[0]}** — {desc}")
+        nome_export = cnaes_buscar[0]
+    else:
+        desc = segmento
+        st.info(f"🔍 Buscando **{len(cnaes_buscar)} CNAEs** do segmento **{segmento}**")
+        nome_export = segmento.replace(" ", "_")[:30]
 
     todas = []
+    total_ops = len(cnaes_buscar) * paginas
     barra = st.progress(0, text="Iniciando busca…")
-    for i, pg in enumerate(range(1, paginas + 1), 1):
-        barra.progress(i / paginas, text=f"Buscando página {pg} de {paginas}…")
-        todas.extend(buscar_por_cnae(cnae_final, municipio, estado, pg))
-        if pg < paginas:
-            time.sleep(0.8)
+    op = 0
+    for cnae_iter in cnaes_buscar:
+        for pg in range(1, paginas + 1):
+            op += 1
+            barra.progress(op / total_ops, text=f"CNAE {cnae_iter} — página {pg}/{paginas}…")
+            todas.extend(buscar_por_cnae(cnae_iter, municipio, estado, pg))
+            time.sleep(0.6)
     barra.empty()
 
     if not todas:
@@ -403,6 +419,7 @@ if aba == "🔍 Buscar por Segmento / CNAE" and btn_buscar:
         st.stop()
 
     df = pd.DataFrame([formatar(e) for e in todas])
+    df = df.drop_duplicates(subset=["CNPJ"])  # remove duplicatas entre CNAEs
 
     # ── Métricas ──────────────────────────────────────────────────────────────
     c1, c2, c3, c4 = st.columns(4)
@@ -472,7 +489,7 @@ if aba == "🔍 Buscar por Segmento / CNAE" and btn_buscar:
 
             with st.expander("💡 Sugestão de abordagem comercial"):
                 st.markdown(f"""
-A **{emp['Razão Social']}** é uma empresa do setor **{desc}**, localizada em
+A **{emp['Razão Social']}** é uma empresa do setor **{emp['Descrição CNAE'] or desc}**, localizada em
 **{emp['Município']} / {emp['UF']}**.
 
 **Como abordar:**
@@ -495,14 +512,14 @@ A **{emp['Razão Social']}** é uma empresa do setor **{desc}**, localizada em
 
     csv = df_vis.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig")
     col_dl1.download_button("⬇️ Baixar CSV",
-        csv, f"locvix_prospects_{cnae_final}.csv", "text/csv",
+        csv, f"locvix_prospects_{nome_export}.csv", "text/csv",
         use_container_width=True)
 
     buf = io.BytesIO()
     with pd.ExcelWriter(buf, engine="openpyxl") as w:
         df_vis.to_excel(w, index=False, sheet_name="Prospects")
     col_dl2.download_button("⬇️ Baixar Excel",
-        buf.getvalue(), f"locvix_prospects_{cnae_final}.xlsx",
+        buf.getvalue(), f"locvix_prospects_{nome_export}.xlsx",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True)
 
