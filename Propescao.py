@@ -230,6 +230,28 @@ st.markdown("""
     body[data-theme="dark"] [data-testid="stLinkButton"] a span {
         color: #e0e0e0 !important;
     }
+    /* Download buttons (st.download_button) no dark mode — secundários */
+    body[data-theme="dark"] [data-testid="stDownloadButton"] button {
+        background-color: #262730 !important;
+        color: #e0e0e0 !important;
+        border-color: #555 !important;
+    }
+    body[data-theme="dark"] [data-testid="stDownloadButton"] button:hover {
+        background-color: #2a2e42 !important;
+        color: #ffffff !important;
+        border-color: #888 !important;
+    }
+    body[data-theme="dark"] [data-testid="stDownloadButton"] button p,
+    body[data-theme="dark"] [data-testid="stDownloadButton"] button span {
+        color: #e0e0e0 !important;
+    }
+    /* Botões secundários genéricos (st.button sem type="primary") */
+    body[data-theme="dark"] [data-testid="stButton"] button[kind="secondary"],
+    body[data-theme="dark"] [data-testid="stBaseButton-secondary"] {
+        background-color: #262730 !important;
+        color: #e0e0e0 !important;
+        border-color: #555 !important;
+    }
 </style>
 <button id="locvix-theme-btn" title="Alternar tema claro/escuro">🌙</button>
 """, unsafe_allow_html=True)
