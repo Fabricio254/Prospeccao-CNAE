@@ -20,22 +20,63 @@ if "autenticado" not in st.session_state:
 if not st.session_state.autenticado:
     st.markdown("""
     <style>
-        .login-box {max-width:360px; margin:10vh auto; text-align:center;}
-        .login-titulo {font-size:2rem; font-weight:700; color:#e67e22; margin-bottom:0.3rem;}
-        .login-sub {color:#888; margin-bottom:1.5rem;}
+        /* Remove padding padrão do Streamlit na tela de login */
+        [data-testid="stAppViewContainer"] > .main > .block-container {
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }
+        /* Fundo da tela de login */
+        .login-page-bg {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 92vh;
+            width: 100%;
+        }
+        /* Card central */
+        .login-card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.13);
+            padding: 3rem 2.5rem 2.5rem 2.5rem;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        .login-icon  { font-size: 3rem; margin-bottom: 0.3rem; }
+        .login-titulo {
+            font-size: 2rem; font-weight: 700;
+            color: #e67e22; margin: 0 0 0.2rem 0;
+        }
+        .login-sub {
+            font-size: 0.95rem; color: #888;
+            margin: 0 0 2rem 0;
+        }
+        .login-divider {
+            border: none; border-top: 1px solid #f0f0f0;
+            margin: 0 0 1.5rem 0;
+        }
     </style>
-    <div class="login-box">
-        <p class="login-titulo">🏗️ Locvix</p>
-        <p class="login-sub">Prospecção de Clientes</p>
+    <div class="login-page-bg">
+        <div class="login-card">
+            <div class="login-icon">🏗️</div>
+            <p class="login-titulo">Locvix</p>
+            <p class="login-sub">Prospecção de Clientes</p>
+            <hr class="login-divider">
+        </div>
     </div>
     """, unsafe_allow_html=True)
-    senha = st.text_input("Senha de acesso:", type="password", placeholder="Digite a senha…")
-    if st.button("Entrar", type="primary", use_container_width=False):
-        if senha == "zampa":
-            st.session_state.autenticado = True
-            st.rerun()
-        else:
-            st.error("Senha incorreta.")
+    # Centraliza os widgets usando colunas (1/3 - 1/3 - 1/3)
+    _, col_c, _ = st.columns([1, 1, 1])
+    with col_c:
+        senha = st.text_input("Senha de acesso:", type="password",
+                              placeholder="Digite a senha…", label_visibility="collapsed")
+        if st.button("Entrar", type="primary", use_container_width=True):
+            if senha == "zampa":
+                st.session_state.autenticado = True
+                st.rerun()
+            else:
+                st.error("Senha incorreta.")
     st.stop()
 
 
