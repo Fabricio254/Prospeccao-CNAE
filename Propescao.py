@@ -372,33 +372,22 @@ GRUPOS_CNAE = {
             "4291000": "Obras portuárias, marítimas e fluviais",
             "4292801": "Montagem de estruturas metálicas",
             "4311801": "Demolição de edifícios e outras estruturas",
-            "4312600": "Perfurações e sondagens",
-            "4321500": "Instalação e manutenção elétrica",
             "4322301": "Instalações hidráulicas, sanitárias e de gás",
-            "4330401": "Impermeabilização em obras de engenharia civil",
             "4391600": "Obras de fundações",
-            "4399101": "Administração de obras",
             "4399103": "Obras de terraplanagem",
-            "4110700": "Incorporação de empreendimentos imobiliários",
         }
     },
 
     "🏭 Indústria — Manutenção e Instalação": {
         "desc": "Paradas programadas, instalação/remoção de máquinas pesadas e manutenção industrial.",
         "cnaes": {
-            "3321000": "Instalação de máquinas e equipamentos industriais",
             "3311200": "Manutenção de tanques e reservatórios metálicos",
             "3312102": "Manutenção e reparação de equipamentos para a indústria",
             "3313901": "Manutenção de geradores, transformadores e motores",
             "3314701": "Manutenção de máquinas motrizes não elétricas",
             "3314799": "Manutenção e reparação de outras máquinas e equipamentos",
-            "2411300": "Produção de ferro-gusa",
-            "2531401": "Produção de forjados de aço",
             "2710401": "Fabricação de geradores de corrente contínua e alternada",
             "2812700": "Fabricação de equipamentos hidráulicos e pneumáticos",
-            "2861500": "Fabricação de ferramentas",
-            "2941700": "Fabricação de peças para sistema motor de veículos",
-            "3011302": "Construção de embarcações para transporte",
             "2330301": "Fabricação de estruturas pré-moldadas de concreto",
             "1710900": "Fabricação de celulose e outras pastas",
             "1921700": "Fabricação de produtos do refino de petróleo",
@@ -411,14 +400,8 @@ GRUPOS_CNAE = {
             "3511501": "Geração de energia elétrica",
             "3511502": "Geração de energia elétrica de origem eólica",
             "3511503": "Geração de energia elétrica solar fotovoltaica",
-            "3512300": "Transmissão de energia elétrica",
-            "3514000": "Distribuição de energia elétrica",
             "0600001": "Extração de petróleo e gás natural",
             "0910600": "Atividades de apoio à extração de petróleo e gás",
-            "4321500": "Instalação e manutenção elétrica",
-            "3530000": "Produção e distribuição de vapor e ar condicionado",
-            "4322302": "Instalação e manutenção de sistemas de ar condicionado",
-            "3600601": "Captação, tratamento e distribuição de água",
         }
     },
 
@@ -444,15 +427,6 @@ GRUPOS_CNAE = {
     "🚛 Transporte Pesado e Logística": {
         "desc": "Carga/descarga de cargas superdimensionadas, movimentação de contêineres e máquinas.",
         "cnaes": {
-            "4930201": "Transporte rodoviário de carga — exceto produtos perigosos",
-            "4930202": "Transporte rodoviário de carga — produtos perigosos",
-            "5011401": "Transporte marítimo de cabotagem",
-            "5012201": "Transporte marítimo de longo curso — carga",
-            "5091201": "Transporte por navegação de travessia — carga",
-            "5111100": "Transporte aéreo de passageiros regular",
-            "5120000": "Transporte aéreo de carga",
-            "5211701": "Armazéns gerais — emissão de warrant",
-            "5212500": "Carga e descarga",
             "5231101": "Administração de portos e terminais",
             "5250801": "Agenciamento de cargas",
         }
@@ -461,16 +435,7 @@ GRUPOS_CNAE = {
     "🌾 Agronegócio — Silos e Maquinário": {
         "desc": "Instalação de silos, movimentação de colheitadeiras e manutenção de irrigação.",
         "cnaes": {
-            "0161001": "Atividade de apoio à agricultura — colheita",
-            "0163600": "Atividade de pós-colheita",
-            "0111301": "Cultivo de trigo",
-            "0115600": "Cultivo de soja",
-            "0141501": "Criação de bovinos para corte",
-            "0155501": "Criação de frango de corte",
-            "2833000": "Fabricação de máquinas e equipamentos para agricultura",
-            "4612500": "Representantes comerciais de insumos agropecuários",
             "1011201": "Frigorífico — abate de bovinos",
-            "1012101": "Abate de suínos, aves e outros pequenos animais",
         }
     },
 
@@ -480,11 +445,6 @@ GRUPOS_CNAE = {
             "8230001": "Organização de feiras, congressos, exposições e festas",
             "9001906": "Atividades de sonorização e de iluminação",
             "4292801": "Montagem de estruturas metálicas",
-            "9321200": "Parques de diversão e parques temáticos",
-            "9001901": "Produção teatral",
-            "9001902": "Produção musical",
-            "9001905": "Produção de rodeios, vaquejadas e similares",
-            "5911101": "Estúdios cinematográficos",
         }
     },
 
@@ -495,9 +455,7 @@ GRUPOS_CNAE = {
             "5231102": "Operações de terminais",
             "5231103": "Gestão de terminais aquaviários",
             "5232000": "Atividades de agenciamento marítimo",
-            "5239701": "Serviços de praticagem",
             "4291000": "Obras portuárias, marítimas e fluviais",
-            "5212500": "Carga e descarga",
             "0600001": "Extração de petróleo e gás natural",
             "0910600": "Atividades de apoio à extração de petróleo e gás",
         }
