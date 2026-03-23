@@ -100,13 +100,14 @@ st.markdown("""
     body[data-theme="dark"] [data-baseweb="input"] input::placeholder {
         color: #888 !important;
     }
-    /* Tags do multiselect (ex: "4120400 — Construção…") */
+    /* Tags do multiselect — vermelho igual ao light mode */
     body[data-theme="dark"] [data-baseweb="tag"] {
-        background-color: #3a3d4d !important;
-        border-color: #666 !important;
+        background-color: #e53935 !important;
+        border-color: #c62828 !important;
     }
-    body[data-theme="dark"] [data-baseweb="tag"] span {
-        color: #fafafa !important;
+    body[data-theme="dark"] [data-baseweb="tag"] span,
+    body[data-theme="dark"] [data-baseweb="tag"] button {
+        color: #ffffff !important;
     }
     /* Lista suspensa do dropdown */
     body[data-theme="dark"] [data-baseweb="popover"],
