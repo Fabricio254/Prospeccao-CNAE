@@ -38,6 +38,26 @@ st.markdown("""
     }
     #locvix-theme-btn:hover { transform: scale(1.12); }
 
+    /* ── Sidebar sempre aberta — esconde botão de colapsar ── */
+    section[data-testid="stSidebar"] {
+        transform: translateX(0) !important;
+        width: 21rem !important;
+        min-width: 1px !important;
+        visibility: visible !important;
+    }
+    section[data-testid="stSidebar"] > div:first-child {
+        transform: translateX(0) !important;
+        visibility: visible !important;
+    }
+    /* Esconde TODOS os botões de colapsar/expandir sidebar */
+    [data-testid="stSidebarCollapseButton"],
+    [data-testid="collapsedControl"],
+    button[aria-label*="idebar"],
+    button[aria-label*="ollapse"],
+    button[aria-label*="xpand"] {
+        display: none !important;
+    }
+
     /* ── Dark mode ── */
     body[data-theme="dark"] { color-scheme: dark; }
     body[data-theme="dark"] .stApp,
@@ -105,64 +125,8 @@ components.html("""
             }
         } catch(e) {}
     }
-    // ── Forçar sidebar aberta via CSS + MutationObserver ──
-    var _forceDeadline = 0;
-    var _forceObs = null;
-    function forceSidebarOpen(p) {
-        var sb = p.document.querySelector('section[data-testid="stSidebar"]');
-        if (!sb) return;
-        function applyForce() {
-            sb.style.setProperty('transform', 'translateX(0)', 'important');
-            sb.style.setProperty('width', '21rem', 'important');
-            sb.style.setProperty('min-width', '1px', 'important');
-            sb.style.setProperty('visibility', 'visible', 'important');
-            var inner = sb.firstElementChild;
-            if (inner) {
-                inner.style.setProperty('transform', 'translateX(0)', 'important');
-                inner.style.setProperty('visibility', 'visible', 'important');
-            }
-        }
-        applyForce();
-        _forceDeadline = Date.now() + 5000;
-        if (!_forceObs) {
-            _forceObs = new p.MutationObserver(function() {
-                if (Date.now() < _forceDeadline) applyForce();
-            });
-            _forceObs.observe(sb, { attributes: true, attributeFilter: ['style', 'class'] });
-            var inner2 = sb.firstElementChild;
-            if (inner2) _forceObs.observe(inner2, { attributes: true, attributeFilter: ['style', 'class'] });
-        }
-    }
-
-    function injectSidebarBtn() {
-        try {
-            var p = window.parent;
-            if (p.document.getElementById('locvix-sb-btn')) return;
-            var btn = p.document.createElement('div');
-            btn.id = 'locvix-sb-btn';
-            btn.title = 'Abrir menu de filtros';
-            btn.innerHTML = '<span style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:13px;font-weight:800;letter-spacing:2px;pointer-events:none">&equiv; FILTROS</span>';
-            btn.style.cssText = 'position:fixed;left:0;top:50%;transform:translateY(-50%);background:#e67e22;color:white;border-radius:0 12px 12px 0;padding:18px 7px;cursor:pointer;z-index:2147483647;box-shadow:4px 0 16px rgba(230,126,34,0.7);display:none;align-items:center;min-height:80px;';
-            var styleEl = p.document.createElement('style');
-            styleEl.textContent = '@keyframes sb-pulse{0%,100%{box-shadow:4px 0 16px rgba(230,126,34,0.7)}50%{box-shadow:4px 0 28px rgba(230,126,34,1)}}#locvix-sb-btn{animation:sb-pulse 2s ease-in-out infinite}';
-            p.document.head.appendChild(styleEl);
-            btn.addEventListener('click', function() {
-                try {
-                    var p = window.parent;
-                    // Tenta clicar botão nativo do Streamlit
-                    var native = p.document.querySelector('[data-testid="collapsedControl"]');
-                    if (native) native.click();
-                    // Garante abertura via CSS + MutationObserver (funciona mesmo se React brigar)
-                    forceSidebarOpen(p);
-                } catch(e) {}
-            });
-            p.document.body.appendChild(btn);
-        } catch(e) {}
-    }
-
     applyTheme(window.parent.localStorage.getItem(KEY) || 'light');
     bindBtn();
-    injectSidebarBtn();
 
     setInterval(function() {
         try {
@@ -177,12 +141,6 @@ components.html("""
                 if (tBtn.textContent !== expected) tBtn.textContent = expected;
                 if (!tBtn._lbound) { tBtn.addEventListener('click', toggleTheme); tBtn._lbound = true; }
             }
-            var sbBtn = p.document.getElementById('locvix-sb-btn');
-            if (!sbBtn) { injectSidebarBtn(); return; }
-            var sidebar = p.document.querySelector('section[data-testid="stSidebar"]');
-            // Usa .left >= -10 em vez de .width: translateX(-100%) deixa width positivo mas left negativo
-            var sidebarOpen = sidebar && sidebar.getBoundingClientRect().left >= -10;
-            sbBtn.style.display = sidebarOpen ? 'none' : 'flex';
         } catch(e) {}
     }, 300);
 })();
