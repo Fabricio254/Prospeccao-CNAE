@@ -80,9 +80,57 @@ st.markdown("""
         background-color: #262730 !important; color: #fafafa !important;
         border-color: #555 !important;
     }
+    /* BaseWeb — fundo e COR DO TEXTO dos campos input/select/multiselect */
     body[data-theme="dark"] [data-baseweb="select"] > div,
     body[data-theme="dark"] [data-baseweb="input"] > div {
         background-color: #262730 !important; border-color: #555 !important;
+        color: #fafafa !important;
+    }
+    /* Texto digitado e valor selecionado dentro de qualquer campo */
+    body[data-theme="dark"] [data-baseweb="select"] span,
+    body[data-theme="dark"] [data-baseweb="select"] div,
+    body[data-theme="dark"] [data-baseweb="input"] span,
+    body[data-theme="dark"] [data-baseweb="input"] input,
+    body[data-theme="dark"] [data-baseweb="textarea"] textarea {
+        color: #fafafa !important;
+        background-color: transparent !important;
+    }
+    /* Placeholder */
+    body[data-theme="dark"] [data-baseweb="select"] input::placeholder,
+    body[data-theme="dark"] [data-baseweb="input"] input::placeholder {
+        color: #888 !important;
+    }
+    /* Tags do multiselect (ex: "4120400 — Construção…") */
+    body[data-theme="dark"] [data-baseweb="tag"] {
+        background-color: #3a3d4d !important;
+        border-color: #666 !important;
+    }
+    body[data-theme="dark"] [data-baseweb="tag"] span {
+        color: #fafafa !important;
+    }
+    /* Lista suspensa do dropdown */
+    body[data-theme="dark"] [data-baseweb="popover"],
+    body[data-theme="dark"] [data-baseweb="menu"] {
+        background-color: #1e2030 !important;
+    }
+    body[data-theme="dark"] [data-baseweb="menu"] li,
+    body[data-theme="dark"] [data-baseweb="menu"] li span,
+    body[data-theme="dark"] [role="option"] {
+        color: #e0e0e0 !important;
+        background-color: #1e2030 !important;
+    }
+    body[data-theme="dark"] [data-baseweb="menu"] li:hover,
+    body[data-theme="dark"] [role="option"]:hover {
+        background-color: #2a2e42 !important;
+    }
+    /* Radio buttons e sliders */
+    body[data-theme="dark"] [data-testid="stRadio"] label,
+    body[data-theme="dark"] [data-testid="stSlider"] label,
+    body[data-theme="dark"] [data-testid="stNumberInput"] label {
+        color: #e0e0e0 !important;
+    }
+    body[data-theme="dark"] [data-testid="stNumberInput"] input {
+        color: #fafafa !important; background-color: #262730 !important;
     }
     body[data-theme="dark"] [data-testid="stMetricValue"],
     body[data-theme="dark"] [data-testid="stMetricLabel"] { color: #e0e0e0 !important; }
