@@ -169,6 +169,99 @@ CNAES = {
     "9603300": "Atividades funerárias",
 }
 
+# ── Grupos de CNAE por segmento (Locação de Guindastes e Maquinários) ────────
+GRUPOS_CNAE = {
+    "🏗️ Construção Civil (Construtoras)": {
+        "4120400": "Construção de edifícios",
+        "4211101": "Construção de rodovias e ferrovias",
+        "4221901": "Construção de barragens e represas",
+        "4291000": "Obras portuárias e fluviais",
+        "4311801": "Demolição de edifícios e outras estruturas",
+        "4312600": "Perfurações e sondagens",
+        "4321500": "Instalação e manutenção elétrica",
+        "4322301": "Instalações hidráulicas, sanitárias e de gás",
+        "4330401": "Impermeabilização em obras de engenharia civil",
+        "4391600": "Obras de fundações",
+        "4399101": "Administração de obras",
+        "4110700": "Incorporação de empreendimentos imobiliários",
+        "4292801": "Montagem de estruturas metálicas",
+    },
+    "🏭 Indústria e Manutenção Industrial": {
+        "3321000": "Instalação de máquinas industriais",
+        "3311200": "Manutenção e reparação de tanques e reservatórios metálicos",
+        "2411300": "Produção de ferro-gusa",
+        "2531401": "Produção de forjados de aço",
+        "2512800": "Fabricação de esquadrias de metal",
+        "2710401": "Fabricação de geradores de corrente contínua e alternada",
+        "2812700": "Fabricação de equipamentos hidráulicos e pneumáticos",
+        "2861500": "Fabricação de ferramentas",
+        "2941700": "Fabricação de peças e acessórios para sistema motor veicular",
+        "3011302": "Construção de embarcações para transporte",
+        "2319200": "Fabricação de artigos de vidro",
+        "2330301": "Fabricação de estruturas pré-moldadas de concreto",
+        "1610201": "Serrarias com desdobramento de madeira",
+        "1710900": "Fabricação de celulose e outras pastas",
+    },
+    "🚛 Transporte, Logística e Armazéns": {
+        "4930201": "Transporte rodoviário de carga",
+        "4921301": "Transporte rodoviário coletivo de passageiros",
+        "5011401": "Transporte marítimo de cabotagem",
+        "5091201": "Transporte por navegação de travessia",
+        "5111100": "Transporte aéreo de passageiros",
+        "5211701": "Armazéns gerais",
+        "5250801": "Agenciamento de cargas",
+        "5310501": "Atividades do Correio Nacional",
+        "4950700": "Trens turísticos, teleféricos e similares",
+    },
+    "⚡ Energia (Eólico, Elétrico, Óleo e Gás)": {
+        "3511501": "Geração de energia elétrica",
+        "3511502": "Geração de energia elétrica de origem eólica",
+        "3511503": "Geração de energia elétrica de origem solar fotovoltaica",
+        "3512300": "Transmissão de energia elétrica",
+        "3513100": "Comércio atacadista de energia elétrica",
+        "3514000": "Distribuição de energia elétrica",
+        "0600001": "Extração de petróleo e gás natural",
+        "0910600": "Atividades de apoio à extração de petróleo e gás natural",
+        "1921700": "Fabricação de produtos do refino de petróleo",
+        "4321500": "Instalação e manutenção elétrica",
+    },
+    "🌾 Agronegócio e Agropecuária": {
+        "0111301": "Cultivo de trigo",
+        "0115600": "Cultivo de soja",
+        "0161001": "Atividade de apoio à agricultura",
+        "0210101": "Cultivo de eucalipto",
+        "1011201": "Frigorífico - abate de bovinos",
+        "1012101": "Abate de suínos, aves e outros pequenos animais",
+        "0141501": "Criação de bovinos para corte",
+        "0151201": "Criação de suínos",
+        "0155501": "Criação de frango de corte",
+        "0163600": "Atividade de pós-colheita",
+        "2833000": "Fabricação de máquinas e equipamentos para agricultura",
+        "4612500": "Representantes comerciais de insumos agropecuários",
+    },
+    "🎪 Eventos, Montadoras e Estruturas": {
+        "8230001": "Organização de feiras, congressos e festas",
+        "9001906": "Atividades de sonorização e de iluminação",
+        "4292801": "Montagem de estruturas metálicas",
+        "5911101": "Estúdios cinematográficos",
+        "9321200": "Parques de diversão e parques temáticos",
+    },
+    "⛏️ Mineração e Siderurgia": {
+        "0710301": "Extração de minério de ferro",
+        "0721901": "Extração de minério de alumínio",
+        "0722701": "Extração de minério de estanho",
+        "0723501": "Extração de minério de manganês",
+        "0724301": "Extração de minério de metais preciosos",
+        "0729401": "Extração de minerais metálicos não-ferrosos",
+        "0810001": "Extração de ardósia e beneficiamento",
+        "2411300": "Produção de ferro-gusa",
+        "2412100": "Produção de ferroligas",
+        "2421100": "Produção de semiacabados de aço",
+        "2422901": "Produção de laminados planos de aço",
+        "2423701": "Produção de tubos de aço sem costura",
+    },
+}
+
 ESTADOS = ["", "AC","AL","AP","AM","BA","CE","DF","ES","GO",
            "MA","MT","MS","MG","PA","PB","PR","PE","PI",
            "RJ","RN","RS","RO","RR","SC","SP","SE","TO"]
@@ -271,16 +364,51 @@ with st.sidebar:
     aba = st.radio("Modo:", ["Buscar por CNAE", "Consultar CNPJ"])
 
     if aba == "Buscar por CNAE":
-        cnae_sel = st.selectbox(
-            "CNAE:",
-            options=list(CNAES.keys()),
-            format_func=lambda x: f"{x} — {CNAES[x]}"
+
+        modo_cnae = st.radio(
+            "Selecionar CNAE por:",
+            ["🗂️ Grupo de Segmento", "📋 Lista Completa", "✏️ Código Manual"],
         )
-        cnae_manual = st.text_input(
-            "Ou digite o código manualmente:",
-            placeholder="Ex: 6204000"
-        )
-        cnae_final = cnae_manual.strip() if cnae_manual.strip() else cnae_sel
+
+        if modo_cnae == "🗂️ Grupo de Segmento":
+            descricoes_seg = {
+                "🏗️ Construção Civil (Construtoras)": "Içamento de materiais, montagem de estruturas pré-fabricadas e metálicas.",
+                "🏭 Indústria e Manutenção Industrial": "Manutenção programada, instalação e remoção de máquinas pesadas.",
+                "🚛 Transporte, Logística e Armazéns": "Carga/descarga de cargas excepcionais, movimentação de contêineres.",
+                "⚡ Energia (Eólico, Elétrico, Óleo e Gás)": "Montagem de torres eólicas, instalação de transformadores, manutenção em refinarias.",
+                "🌾 Agronegócio e Agropecuária": "Instalação de silos, movimentação de maquinário pesado agrícola.",
+                "🎪 Eventos, Montadoras e Estruturas": "Montagem de palcos, estruturas metálicas e equipamentos em eventos.",
+                "⛏️ Mineração e Siderurgia": "Movimentação de equipamentos pesados em minas e usinas.",
+            }
+            segmento_sel = st.selectbox(
+                "Segmento:",
+                options=list(GRUPOS_CNAE.keys())
+            )
+            st.caption(f"📌 {descricoes_seg.get(segmento_sel, '')}")
+            cnaes_seg = GRUPOS_CNAE[segmento_sel]
+            cnae_sel = st.selectbox(
+                "CNAE do segmento:",
+                options=list(cnaes_seg.keys()),
+                format_func=lambda x: f"{x} — {cnaes_seg[x]}"
+            )
+            cnae_final = cnae_sel
+
+        elif modo_cnae == "📋 Lista Completa":
+            cnae_sel = st.selectbox(
+                "CNAE:",
+                options=list(CNAES.keys()),
+                format_func=lambda x: f"{x} — {CNAES[x]}"
+            )
+            cnae_final = cnae_sel
+
+        else:  # Código Manual
+            cnae_final = st.text_input(
+                "Digite o código CNAE:",
+                placeholder="Ex: 6204000"
+            ).strip()
+            if not cnae_final:
+                st.warning("Digite um código CNAE para continuar.")
+                cnae_final = ""
 
         st.divider()
         municipio = st.text_input("Município:", placeholder="Ex: SAO PAULO")
