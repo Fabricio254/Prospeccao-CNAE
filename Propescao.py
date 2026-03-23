@@ -19,8 +19,10 @@ st.markdown("""
     .sub-title  {font-size:1rem; color:#555; margin-bottom:1.5rem;}
     .tag-seg    {background:#fff3e0; border-left:4px solid #e67e22; padding:8px 14px;
                  border-radius:4px; font-size:.9rem; margin-bottom:.8rem;}
-    /* Esconde toolbar superior (Share, editar, GitHub, Deploy) */
-    header[data-testid="stHeader"] {display: none !important;}
+    /* Esconde toolbar superior (Share, editar, GitHub, Deploy) — mantém o header no DOM */
+    [data-testid="stToolbar"] {display: none !important;}
+    [data-testid="stDecoration"] {display: none !important;}
+    header[data-testid="stHeader"] {background: transparent !important; border-bottom: none !important;}
     #MainMenu {display: none !important;}
     footer {display: none !important;}
 
@@ -100,7 +102,7 @@ st.markdown("""
         background: #262730 !important; border-color: #555 !important;
     }
 </style>
-<button id="locvix-theme-btn" onclick="locvixToggleTheme()" title="Alternar tema claro/escuro">🌙</button>
+<button id="locvix-theme-btn" title="Alternar tema claro/escuro">🌙</button>
 """, unsafe_allow_html=True)
 
 components.html("""
@@ -116,11 +118,23 @@ components.html("""
             if (btn) btn.textContent = theme === 'dark' ? '\\u2600\\uFE0F' : '\\uD83C\\uDF19';
         } catch(e) {}
     }
-    window.parent.locvixToggleTheme = function() {
-        var cur = window.parent.localStorage.getItem(KEY) || 'light';
-        applyTheme(cur === 'dark' ? 'light' : 'dark');
-    };
+    function toggleTheme() {
+        try {
+            var cur = window.parent.localStorage.getItem(KEY) || 'light';
+            applyTheme(cur === 'dark' ? 'light' : 'dark');
+        } catch(e) {}
+    }
+    function bindBtn() {
+        try {
+            var btn = window.parent.document.getElementById('locvix-theme-btn');
+            if (btn && !btn._lbound) {
+                btn.addEventListener('click', toggleTheme);
+                btn._lbound = true;
+            }
+        } catch(e) {}
+    }
     applyTheme(window.parent.localStorage.getItem(KEY) || 'light');
+    bindBtn();
     setInterval(function() {
         try {
             var theme = window.parent.localStorage.getItem(KEY) || 'light';
@@ -131,6 +145,7 @@ components.html("""
             if (btn) {
                 var expected = theme === 'dark' ? '\\u2600\\uFE0F' : '\\uD83C\\uDF19';
                 if (btn.textContent !== expected) btn.textContent = expected;
+                if (!btn._lbound) { btn.addEventListener('click', toggleTheme); btn._lbound = true; }
             }
         } catch(e) {}
     }, 300);
