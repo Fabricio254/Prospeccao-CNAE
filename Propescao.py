@@ -199,8 +199,13 @@ ESTADOS = ["", "AC","AL","AP","AM","BA","CE","DF","ES","GO",
 
 def buscar_por_cnae(cnae: str, municipio: str, estado: str, pagina: int = 1):
     url = "https://api.casadosdados.com.br/v2/public/cnpj/pesquisa"
-    payload = {
-        "query": {"cnae_fiscal_principal": {"codigo": cnae}, "situacao_cadastral": "ATIVA"},
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0",
+    }
+    payload: dict = {
+        "query": {"cnae_fiscal_principal": {"codigo": cnae}},
         "range_query": {},
         "extras": {
             "somente_mei": False, "excluir_mei": False,
@@ -213,13 +218,20 @@ def buscar_por_cnae(cnae: str, municipio: str, estado: str, pagina: int = 1):
         payload["query"]["municipio"] = municipio.strip().upper()
     if estado.strip():
         payload["query"]["uf"] = estado.strip().upper()
-    try:
-        r = requests.post(url, json=payload, timeout=20)
-        if r.status_code == 200:
-            return r.json().get("data", {}).get("cnpj", [])
-    except Exception:
-        pass
-    return []
+
+    for tentativa in range(3):
+        try:
+            r = requests.post(url, json=payload, headers=headers, timeout=25)
+            if r.status_code == 200:
+                resultado = r.json().get("data", {}).get("cnpj", [])
+                return resultado, None
+            if r.status_code in (429, 503):
+                time.sleep(3 * (tentativa + 1))
+                continue
+            return [], f"HTTP {r.status_code}: {r.text[:200]}"
+        except Exception as e:
+            time.sleep(2)
+    return [], "Timeout ou erro de conexão após 3 tentativas"
 
 
 def buscar_cnpj(cnpj: str):
@@ -403,6 +415,7 @@ if aba == "🔍 Buscar por Segmento / CNAE" and btn_buscar:
         nome_export = segmento.replace(" ", "_")[:30]
 
     todas = []
+    erros_api: list = []
     total_ops = len(cnaes_buscar) * paginas
     barra = st.progress(0, text="Iniciando busca…")
     op = 0
@@ -410,9 +423,17 @@ if aba == "🔍 Buscar por Segmento / CNAE" and btn_buscar:
         for pg in range(1, paginas + 1):
             op += 1
             barra.progress(op / total_ops, text=f"CNAE {cnae_iter} — página {pg}/{paginas}…")
-            todas.extend(buscar_por_cnae(cnae_iter, municipio, estado, pg))
-            time.sleep(0.6)
+            resultados, erro = buscar_por_cnae(cnae_iter, municipio, estado, pg)
+            todas.extend(resultados)
+            if erro:
+                erros_api.append(f"CNAE {cnae_iter} p.{pg}: {erro}")
+            time.sleep(1.2)
     barra.empty()
+
+    if erros_api:
+        with st.expander(f"⚠️ {len(erros_api)} erro(s) de API — clique para ver"):
+            for e in erros_api:
+                st.code(e)
 
     if not todas:
         st.error("Nenhuma empresa encontrada. Tente outro CNAE, município ou estado.")
