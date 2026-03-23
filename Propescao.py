@@ -18,6 +18,10 @@ st.markdown("""
     .sub-title  {font-size:1rem; color:#555; margin-bottom:1.5rem;}
     .tag-seg    {background:#fff3e0; border-left:4px solid #e67e22; padding:8px 14px;
                  border-radius:4px; font-size:.9rem; margin-bottom:.8rem;}
+    /* Esconde toolbar superior (Share, editar, GitHub, Deploy) */
+    header[data-testid="stHeader"] {display: none !important;}
+    #MainMenu {display: none !important;}
+    footer {display: none !important;}
 </style>
 """, unsafe_allow_html=True)
 
