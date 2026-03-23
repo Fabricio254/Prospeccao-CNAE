@@ -214,6 +214,22 @@ st.markdown("""
     body[data-theme="dark"] #locvix-theme-btn {
         background: #262730 !important; border-color: #555 !important;
     }
+    /* Link buttons (st.link_button) no dark mode — secundários */
+    body[data-theme="dark"] [data-testid="stLinkButton"] a {
+        background-color: #262730 !important;
+        color: #e0e0e0 !important;
+        border-color: #555 !important;
+    }
+    body[data-theme="dark"] [data-testid="stLinkButton"] a:hover {
+        background-color: #2a2e42 !important;
+        color: #ffffff !important;
+        border-color: #888 !important;
+    }
+    /* Garante que o texto interno também seja claro */
+    body[data-theme="dark"] [data-testid="stLinkButton"] a p,
+    body[data-theme="dark"] [data-testid="stLinkButton"] a span {
+        color: #e0e0e0 !important;
+    }
 </style>
 <button id="locvix-theme-btn" title="Alternar tema claro/escuro">🌙</button>
 """, unsafe_allow_html=True)
