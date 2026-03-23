@@ -197,33 +197,35 @@ ESTADOS = ["", "AC","AL","AP","AM","BA","CE","DF","ES","GO",
 # FUNÇÕES DE API
 # ══════════════════════════════════════════════════════════════════════════════
 
-def buscar_por_cnae(cnae: str, municipio: str, estado: str, pagina: int, token: str):
-    """Busca empresas por CNAE via Brasil.io (dados Receita Federal, sem Cloudflare)."""
-    url = "https://brasil.io/api/dataset/socios-brasil/empresas/data/"
-    params: dict = {"cnae_fiscal": cnae, "page": pagina}
-    if municipio.strip():
-        params["municipio"] = municipio.strip().upper()
+def buscar_por_cnae(cnae: str, municipio: str, estado: str, cursor: int | None, _token: str = ""):
+    """Busca empresas por CNAE via minhareceita.org (dados abertos da Receita Federal)."""
+    url = "https://minhareceita.org/"
+    params: dict = {"cnae": cnae}
     if estado.strip():
         params["uf"] = estado.strip().upper()
+    if cursor:
+        params["cursor"] = cursor
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Token {token.strip()}",
-        "User-Agent": "Mozilla/5.0",
-    }
+    headers = {"Accept": "application/json", "User-Agent": "Mozilla/5.0"}
     for tentativa in range(3):
         try:
-            r = requests.get(url, params=params, headers=headers, timeout=25)
+            r = requests.get(url, params=params, headers=headers, timeout=30)
             if r.status_code == 200:
                 data = r.json()
-                return data.get("results", []), None
+                empresas = data.get("data", [])
+                # Filtra por município localmente (a API filtra só por UF)
+                if municipio.strip():
+                    mun_upper = municipio.strip().upper()
+                    empresas = [e for e in empresas if e.get("municipio", "").upper() == mun_upper]
+                next_cursor = data.get("cursor")
+                return empresas, next_cursor, None
             if r.status_code in (429, 503):
                 time.sleep(3 * (tentativa + 1))
                 continue
-            return [], f"HTTP {r.status_code}: {r.text[:300]}"
+            return [], None, f"HTTP {r.status_code}: {r.text[:300]}"
         except Exception as e:
             time.sleep(2)
-    return [], "Timeout ou erro de conexão após 3 tentativas"
+    return [], None, "Timeout ou erro de conexão após 3 tentativas"
 
 
 def buscar_cnpj(cnpj: str):
@@ -281,17 +283,31 @@ def formatar_brasilio(emp: dict) -> dict:
 
 
 def formatar(emp: dict) -> dict:
-    """Normaliza resposta da BrasilAPI / ReceitaWS (consulta CNPJ individual)."""
+    """Normaliza resposta da BrasilAPI / ReceitaWS / minhareceita para o formato padrão."""
     tel  = (emp.get("ddd_telefone_1") or "") + (emp.get("telefone_1") or "")
     tel2 = (emp.get("ddd_telefone_2") or "") + (emp.get("telefone_2") or "")
     cap  = emp.get("capital_social") or 0
     try:    cap_fmt = f"R$ {float(cap):,.2f}"
     except: cap_fmt = str(cap)
+
+    # minhareceita retorna situacao_cadastral como int; BrasilAPI retorna string
+    _SIT_MAP = {1: "NULA", 2: "ATIVA", 3: "SUSPENSA", 4: "INAPTA", 8: "BAIXADA"}
+    sit_raw = emp.get("situacao_cadastral", "")
+    if isinstance(sit_raw, int):
+        situacao = _SIT_MAP.get(sit_raw, str(sit_raw))
+    else:
+        situacao = emp.get("descricao_situacao_cadastral") or str(sit_raw)
+
+    # minhareceita agrupa telefone no campo ddd_telefone_1 sem separação de DDD
+    tel_raw = emp.get("ddd_telefone_1") or ""
+    if tel_raw and not tel:
+        tel = tel_raw
+
     return {
         "CNPJ":              emp.get("cnpj", ""),
         "Razão Social":      emp.get("razao_social", ""),
         "Nome Fantasia":     emp.get("nome_fantasia", ""),
-        "Situação":          emp.get("situacao_cadastral", ""),
+        "Situação":          situacao,
         "Telefone 1":        tel,
         "Telefone 2":        tel2,
         "Email":             emp.get("email", ""),
@@ -342,20 +358,7 @@ st.markdown('<p class="sub-title">Encontre empresas que podem contratar locaçã
 with st.sidebar:
     st.header("⚙️ Filtros de Busca")
 
-    # ── Token Brasil.io ──────────────────────────────────────────
-    brasilio_token = st.text_input(
-        "🔑 Token Brasil.io:",
-        type="password",
-        help="Necessário para buscar empresas. Gratuito em brasil.io/auth/tokens-api/",
-        placeholder="Cole seu token aqui"
-    )
-    if not brasilio_token.strip():
-        st.warning(
-            "⚠️ Token necessário para buscar.\n\n"
-            "1. Acesse [brasil.io/auth/tokens-api](https://brasil.io/auth/tokens-api/)\n"
-            "2. Crie uma conta gratuita\n"
-            "3. Copie o token e cole aqui"
-        )
+    st.caption("📡 Dados: minhareceita.org (Receita Federal — gratuito, sem token)")
     st.divider()
     aba = st.radio("Modo:", ["🔍 Buscar por Segmento / CNAE", "🏢 Consultar CNPJ", "🗺️ Google Maps"])
 
@@ -462,18 +465,21 @@ if aba == "🔍 Buscar por Segmento / CNAE" and btn_buscar:
 
     todas = []
     erros_api: list = []
-    total_ops = len(cnaes_buscar) * paginas
+    vistos: set = set()
+    total_cnaes = len(cnaes_buscar)
     barra = st.progress(0, text="Iniciando busca…")
-    op = 0
-    for cnae_iter in cnaes_buscar:
+    for idx_c, cnae_iter in enumerate(cnaes_buscar):
+        cursor = None
         for pg in range(1, paginas + 1):
-            op += 1
-            barra.progress(op / total_ops, text=f"CNAE {cnae_iter} — página {pg}/{paginas}…")
-            resultados, erro = buscar_por_cnae(cnae_iter, municipio, estado, pg, brasilio_token)
+            progresso = (idx_c * paginas + pg) / (total_cnaes * paginas)
+            barra.progress(progresso, text=f"CNAE {cnae_iter} — página {pg}/{paginas}…")
+            resultados, cursor, erro = buscar_por_cnae(cnae_iter, municipio, estado, cursor)
             todas.extend(resultados)
             if erro:
                 erros_api.append(f"CNAE {cnae_iter} p.{pg}: {erro}")
-            time.sleep(1.0)
+            if not cursor:
+                break  # sem mais páginas para este CNAE
+            time.sleep(0.8)
     barra.empty()
 
     if erros_api:
@@ -485,7 +491,7 @@ if aba == "🔍 Buscar por Segmento / CNAE" and btn_buscar:
         st.error("Nenhuma empresa encontrada. Tente outro CNAE, município ou estado.")
         st.stop()
 
-    df = pd.DataFrame([formatar_brasilio(e) for e in todas])
+    df = pd.DataFrame([formatar(e) for e in todas])
     df = df.drop_duplicates(subset=["CNPJ"])  # remove duplicatas entre CNAEs
 
     # ── Métricas ──────────────────────────────────────────────────────────────
