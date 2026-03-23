@@ -167,6 +167,20 @@ GRUPOS_CNAE = {
             "0910600": "Atividades de apoio à extração de petróleo e gás",
         }
     },
+
+    "🏛️ Engenharia Civil e Arquitetura": {
+        "desc": "Escritórios de engenharia e arquitetura contratam guindastes para obras, montagens e projetos de grande porte.",
+        "cnaes": {
+            "7112000": "Serviços de engenharia",
+            "7111100": "Serviços de arquitetura",
+            "7119701": "Serviços de cartografia e topografia",
+            "7119703": "Serviços de desenho técnico",
+            "4311801": "Demolição de edifícios e outras estruturas",
+            "4319300": "Serviços de preparação do terreno",
+            "4221901": "Construção de barragens e represas",
+            "4213800": "Obras de urbanização — ruas, praças e calçadas",
+        }
+    },
 }
 
 # ── Dicionário plano com todos os CNAEs dos grupos ───────────────────────────
@@ -253,6 +267,28 @@ def formatar(emp: dict) -> dict:
     }
 
 
+def buscar_google_maps(termo: str, cidade: str, estado: str, api_key: str, proximo_token: str = None):
+    """Busca estabelecimentos via Google Maps Places Text Search API."""
+    url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+    if proximo_token:
+        params = {"pagetoken": proximo_token, "key": api_key}
+    else:
+        params = {
+            "query":    f"{termo} em {cidade} {estado} Brasil",
+            "key":      api_key,
+            "language": "pt-BR",
+            "region":   "br",
+        }
+    try:
+        r = requests.get(url, params=params, timeout=20)
+        if r.status_code == 200:
+            data = r.json()
+            return data.get("results", []), data.get("next_page_token")
+    except Exception:
+        pass
+    return [], None
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # INTERFACE
 # ══════════════════════════════════════════════════════════════════════════════
@@ -263,7 +299,7 @@ st.markdown('<p class="sub-title">Encontre empresas que podem contratar locaçã
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.header("⚙️ Filtros de Busca")
-    aba = st.radio("Modo:", ["🔍 Buscar por Segmento / CNAE", "🏢 Consultar CNPJ"])
+    aba = st.radio("Modo:", ["🔍 Buscar por Segmento / CNAE", "🏢 Consultar CNPJ", "🗺️ Google Maps"])
 
     if aba == "🔍 Buscar por Segmento / CNAE":
 
@@ -299,9 +335,46 @@ with st.sidebar:
         st.divider()
         btn_buscar = st.button("🔍 Buscar Empresas", type="primary", use_container_width=True)
 
-    else:
+    elif aba == "🏢 Consultar CNPJ":
         cnpj_input = st.text_input("CNPJ:", placeholder="00.000.000/0001-00")
         btn_cnpj   = st.button("🔍 Consultar", type="primary", use_container_width=True)
+
+    else:  # Google Maps
+        st.markdown("**🗺️ Busca no Google Maps**")
+        maps_api_key = st.text_input(
+            "Chave API Google Maps (opcional):",
+            type="password",
+            help="Sem chave: abre links de busca. Com a Places API Key: mostra resultados aqui no app."
+        )
+
+        TERMOS_MAPS = {
+            "🏗️ Construtoras e incorporadoras":  "construtora",
+            "🏛️ Engenharia civil e arquitetura":  "escritório de engenharia civil",
+            "🏭 Indústrias e manutenção":         "indústria manutenção industrial",
+            "⚡ Energia e utilities":              "empresa de energia instalação elétrica",
+            "⛏️ Mineração e siderurgia":           "mineração siderurgia empresa",
+            "🚛 Transporte pesado":               "transportadora carga pesada",
+            "🏢 Portos e terminais":               "porto terminal portuário",
+            "🎪 Eventos e estruturas temporárias": "empresa de eventos estrutura temporária",
+            "✏️ Personalizado":                   None,
+        }
+
+        maps_categoria = st.selectbox("Categoria:", list(TERMOS_MAPS.keys()))
+
+        if TERMOS_MAPS[maps_categoria] is None:
+            maps_termo = st.text_input("Termo de busca:", placeholder="Ex: empresa de guindastes").strip()
+        else:
+            maps_termo = TERMOS_MAPS[maps_categoria]
+            st.caption(f"🔎 Buscando: *{maps_termo}*")
+
+        st.divider()
+        municipio_maps = st.text_input("Cidade:", placeholder="Ex: Serra", value="Serra")
+        idx_es_maps    = ESTADOS.index("ES")
+        estado_maps    = st.selectbox("Estado:", ESTADOS, index=idx_es_maps, key="estado_maps")
+        paginas_maps   = st.slider("Páginas (API Key):", 1, 5, 2,
+                                   help="Cada página = até 20 resultados. Requer API Key.")
+        st.divider()
+        btn_maps = st.button("🗺️ Buscar no Maps", type="primary", use_container_width=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -507,3 +580,127 @@ e atua em **{emp['Descrição CNAE']}**.
         f"locvix_cnpj_{cnpj_limpo}.xlsx",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# RESULTADO — GOOGLE MAPS
+# ══════════════════════════════════════════════════════════════════════════════
+elif aba == "🗺️ Google Maps" and btn_maps:
+
+    if not maps_termo:
+        st.error("Selecione uma categoria ou digite um termo de busca.")
+        st.stop()
+
+    cidade_exib = f"{municipio_maps.strip() or estado_maps} / {estado_maps}"
+    st.info(f"🗺️ Buscando **{maps_termo}** em **{cidade_exib}**")
+
+    if maps_api_key.strip():
+        # ── Busca via Places API ──────────────────────────────────────────────
+        todas_maps: list = []
+        proximo_token = None
+        barra_m = st.progress(0, text="Consultando Google Maps API…")
+
+        for i in range(1, paginas_maps + 1):
+            barra_m.progress(i / paginas_maps, text=f"Página {i} de {paginas_maps}…")
+            resultados, proximo_token = buscar_google_maps(
+                maps_termo,
+                municipio_maps.strip() or estado_maps,
+                estado_maps,
+                maps_api_key.strip(),
+                proximo_token,
+            )
+            todas_maps.extend(resultados)
+            if not proximo_token:
+                break
+            if i < paginas_maps:
+                time.sleep(2)   # Places API exige ~2 s antes de usar next_page_token
+
+        barra_m.empty()
+
+        if not todas_maps:
+            st.warning("Nenhum resultado encontrado. Verifique a API key e os termos de busca.")
+        else:
+            linhas = []
+            for p in todas_maps:
+                place_id = p.get("place_id", "")
+                linhas.append({
+                    "Nome":        p.get("name", ""),
+                    "Endereço":    p.get("formatted_address", ""),
+                    "Avaliação":   p.get("rating", ""),
+                    "Avaliações":  p.get("user_ratings_total", ""),
+                    "Status":      p.get("business_status", ""),
+                    "Google Maps": f"https://www.google.com/maps/place/?q=place_id:{place_id}" if place_id else "",
+                })
+            df_maps = pd.DataFrame(linhas)
+
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Total encontrado", len(df_maps))
+            c2.metric("Com avaliação",    int((df_maps["Avaliação"] != "").sum()))
+            c3.metric("Operando",         int((df_maps["Status"] == "OPERATIONAL").sum()))
+
+            st.dataframe(
+                df_maps,
+                use_container_width=True,
+                height=480,
+                column_config={
+                    "Google Maps": st.column_config.LinkColumn("Google Maps"),
+                }
+            )
+
+            st.divider()
+            csv_m = df_maps.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig")
+            buf_m = io.BytesIO()
+            with pd.ExcelWriter(buf_m, engine="openpyxl") as w:
+                df_maps.to_excel(w, index=False, sheet_name="GoogleMaps")
+            col1, col2 = st.columns(2)
+            col1.download_button("⬇️ Baixar CSV",
+                csv_m, f"locvix_maps_{maps_termo[:20]}.csv", "text/csv",
+                use_container_width=True)
+            col2.download_button("⬇️ Baixar Excel",
+                buf_m.getvalue(), f"locvix_maps_{maps_termo[:20]}.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True)
+
+    else:
+        # ── Sem API Key: gerar links de busca ─────────────────────────────────
+        st.markdown("### 🔗 Links de Busca no Google Maps")
+        st.markdown("Clique para abrir a busca diretamente no Google Maps:")
+        st.divider()
+
+        termo_enc  = maps_termo.replace(" ", "+")
+        cidade_enc = (municipio_maps.strip() or estado_maps).replace(" ", "+")
+        uf_enc     = estado_maps
+
+        url_cidade = f"https://www.google.com/maps/search/{termo_enc}+em+{cidade_enc}+{uf_enc}"
+        url_estado = f"https://www.google.com/maps/search/{termo_enc}+em+{uf_enc}+Brasil"
+
+        col_a, col_b = st.columns(2)
+        col_a.link_button(
+            f"🗺️ {maps_termo.title()} em {municipio_maps.strip() or uf_enc}",
+            url_cidade, use_container_width=True, type="primary"
+        )
+        col_b.link_button(
+            f"🗺️ {maps_termo.title()} no estado {uf_enc}",
+            url_estado, use_container_width=True
+        )
+
+        st.divider()
+        st.markdown("**Outras buscas relacionadas (Locvix):**")
+        termos_rel = [
+            "construtora obras",
+            "escritório de engenharia civil",
+            "indústria manutenção guindaste",
+            "empresa movimentação de cargas",
+            "mineração siderurgia",
+            "transportadora carga pesada",
+            "porto terminal logística",
+        ]
+        for _t in termos_rel:
+            _enc = _t.replace(" ", "+")
+            _url = f"https://www.google.com/maps/search/{_enc}+em+{cidade_enc}+{uf_enc}"
+            st.link_button(f"🔍 {_t.title()} — {municipio_maps.strip() or uf_enc}",
+                           _url, use_container_width=True)
+
+        st.divider()
+        st.info("💡 Para ver os resultados **dentro do app** com dados completos, "
+                "insira uma **Google Maps Places API Key** na barra lateral.")
