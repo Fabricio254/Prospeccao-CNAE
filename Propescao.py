@@ -26,9 +26,9 @@ st.markdown("""
     #MainMenu {display: none !important;}
     footer {display: none !important;}
 
-    /* ── Botão flutuante claro/escuro ── */
+    /* ── Botão flutuante claro/escuro — lado DIREITO ── */
     #locvix-theme-btn {
-        position: fixed; left: 16px; bottom: 88px;
+        position: fixed; right: 16px; bottom: 88px;
         width: 46px; height: 46px; border-radius: 50%;
         border: 2px solid #ddd; background: #f0f0f0;
         font-size: 22px; cursor: pointer; z-index: 99999;
@@ -39,15 +39,17 @@ st.markdown("""
     #locvix-theme-btn:hover { transform: scale(1.12); }
 
     /* ── Sidebar sempre aberta — esconde botão de colapsar ── */
-    section[data-testid="stSidebar"] {
+    section[data-testid="stSidebar"],
+    section[data-testid="stSidebar"] > div,
+    [data-testid="stSidebarContent"] {
         transform: translateX(0) !important;
-        width: 21rem !important;
-        min-width: 1px !important;
         visibility: visible !important;
+        display: block !important;
     }
-    section[data-testid="stSidebar"] > div:first-child {
-        transform: translateX(0) !important;
-        visibility: visible !important;
+    section[data-testid="stSidebar"] {
+        width: 21rem !important;
+        min-width: 21rem !important;
+        flex-shrink: 0 !important;
     }
     /* Esconde TODOS os botões de colapsar/expandir sidebar */
     [data-testid="stSidebarCollapseButton"],
@@ -127,6 +129,45 @@ components.html("""
     }
     applyTheme(window.parent.localStorage.getItem(KEY) || 'light');
     bindBtn();
+
+    // ── MutationObserver permanente para manter sidebar sempre aberta ──
+    (function() {
+        try {
+            var p = window.parent;
+            function forceOpen() {
+                var targets = [
+                    p.document.querySelector('section[data-testid="stSidebar"]'),
+                    p.document.querySelector('[data-testid="stSidebarContent"]'),
+                ];
+                targets.forEach(function(el) {
+                    if (!el) return;
+                    el.style.setProperty('transform', 'translateX(0)', 'important');
+                    el.style.setProperty('visibility', 'visible', 'important');
+                });
+                var sb = targets[0];
+                if (sb) {
+                    sb.style.setProperty('width', '21rem', 'important');
+                    sb.style.setProperty('min-width', '21rem', 'important');
+                    // Observe all children too
+                    Array.from(sb.children).forEach(function(child) {
+                        child.style.setProperty('transform', 'translateX(0)', 'important');
+                        child.style.setProperty('visibility', 'visible', 'important');
+                    });
+                }
+            }
+            forceOpen();
+            var obs = new p.MutationObserver(forceOpen);
+            function attachObs() {
+                var sb = p.document.querySelector('section[data-testid="stSidebar"]');
+                if (sb) obs.observe(sb, { attributes: true, subtree: true, attributeFilter: ['style', 'class'] });
+            }
+            attachObs();
+            // Re-attach after Streamlit re-renders
+            setInterval(function() {
+                try { forceOpen(); attachObs(); } catch(e) {}
+            }, 500);
+        } catch(e) {}
+    })();
 
     setInterval(function() {
         try {
