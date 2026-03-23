@@ -197,10 +197,10 @@ ESTADOS = ["", "AC","AL","AP","AM","BA","CE","DF","ES","GO",
 # FUNÇÕES DE API
 # ══════════════════════════════════════════════════════════════════════════════
 
-def buscar_por_cnae(cnae: str, municipio: str, estado: str, pagina: int = 1):
-    """Busca empresas por CNAE via publica.cnpj.ws (sem Cloudflare)."""
-    url = "https://publica.cnpj.ws/empresas"
-    params: dict = {"cnae_principal": cnae, "pagina": pagina}
+def buscar_por_cnae(cnae: str, municipio: str, estado: str, pagina: int, token: str):
+    """Busca empresas por CNAE via Brasil.io (dados Receita Federal, sem Cloudflare)."""
+    url = "https://brasil.io/api/dataset/socios-brasil/empresas/data/"
+    params: dict = {"cnae_fiscal": cnae, "page": pagina}
     if municipio.strip():
         params["municipio"] = municipio.strip().upper()
     if estado.strip():
@@ -208,23 +208,19 @@ def buscar_por_cnae(cnae: str, municipio: str, estado: str, pagina: int = 1):
 
     headers = {
         "Accept": "application/json",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Authorization": f"Token {token.strip()}",
+        "User-Agent": "Mozilla/5.0",
     }
     for tentativa in range(3):
         try:
             r = requests.get(url, params=params, headers=headers, timeout=25)
             if r.status_code == 200:
                 data = r.json()
-                # API retorna lista ou dict com chave 'data'
-                if isinstance(data, list):
-                    return data, None
-                if isinstance(data, dict):
-                    return data.get("data", data.get("empresas", [])), None
-                return [], None
+                return data.get("results", []), None
             if r.status_code in (429, 503):
                 time.sleep(3 * (tentativa + 1))
                 continue
-            return [], f"HTTP {r.status_code}: {r.text[:200]}"
+            return [], f"HTTP {r.status_code}: {r.text[:300]}"
         except Exception as e:
             time.sleep(2)
     return [], "Timeout ou erro de conexão após 3 tentativas"
@@ -248,7 +244,6 @@ def buscar_cnpj(cnpj: str):
 
 
 def _str(obj, key="descricao"):
-    """Extrai string de campo que pode ser str ou dict."""
     if obj is None:
         return ""
     if isinstance(obj, dict):
@@ -256,38 +251,32 @@ def _str(obj, key="descricao"):
     return str(obj)
 
 
-def formatar_cnpjws(emp: dict) -> dict:
-    """Normaliza resposta da publica.cnpj.ws para o formato padrão da tabela."""
-    est  = emp.get("estabelecimento") or {}
-    cnae_obj = est.get("atividade_principal") or est.get("cnae_fiscal") or {}
-    mun  = est.get("municipio") or {}
-    uf   = est.get("estado") or {}
-    nat  = emp.get("natureza_juridica") or {}
-    porte = emp.get("porte") or {}
+def formatar_brasilio(emp: dict) -> dict:
+    """Normaliza resposta da Brasil.io para o formato padrão da tabela."""
+    tel1 = (emp.get("ddd1") or "") + (emp.get("telefone1") or "")
+    tel2 = (emp.get("ddd2") or "") + (emp.get("telefone2") or "")
     cap  = emp.get("capital_social") or 0
     try:    cap_fmt = f"R$ {float(str(cap).replace(',', '.')):,.2f}"
     except: cap_fmt = str(cap)
-    tel1 = (est.get("ddd1") or "") + (est.get("telefone1") or "")
-    tel2 = (est.get("ddd2") or "") + (est.get("telefone2") or "")
     return {
-        "CNPJ":              est.get("cnpj") or emp.get("cnpj") or "",
-        "Razão Social":      emp.get("razao_social") or "",
-        "Nome Fantasia":     est.get("nome_fantasia") or "",
-        "Situação":          _str(est.get("situacao_cadastral")),
+        "CNPJ":              emp.get("cnpj", ""),
+        "Razão Social":      emp.get("razao_social", ""),
+        "Nome Fantasia":     emp.get("nome_fantasia", ""),
+        "Situação":          emp.get("situacao_cadastral", ""),
         "Telefone 1":        tel1,
         "Telefone 2":        tel2,
-        "Email":             est.get("email") or "",
-        "Município":         _str(mun, "nome"),
-        "UF":                _str(uf, "sigla"),
-        "Logradouro":        f"{est.get('logradouro','') or ''} {est.get('numero','') or ''} {est.get('complemento','') or ''}".strip(),
-        "Bairro":            est.get("bairro") or "",
-        "CEP":               est.get("cep") or "",
-        "Porte":             _str(porte),
-        "Natureza Jurídica": _str(nat),
+        "Email":             emp.get("email", ""),
+        "Município":         emp.get("municipio", ""),
+        "UF":                emp.get("uf", ""),
+        "Logradouro":        f"{emp.get('logradouro','') or ''} {emp.get('numero','') or ''} {emp.get('complemento','') or ''}".strip(),
+        "Bairro":            emp.get("bairro", ""),
+        "CEP":               emp.get("cep", ""),
+        "Porte":             emp.get("porte", ""),
+        "Natureza Jurídica": emp.get("natureza_juridica", ""),
         "Capital Social":    cap_fmt,
-        "Data de Abertura":  est.get("data_inicio_atividade") or "",
-        "CNAE Principal":    str(cnae_obj.get("codigo") if isinstance(cnae_obj, dict) else cnae_obj or ""),
-        "Descrição CNAE":    cnae_obj.get("descricao") if isinstance(cnae_obj, dict) else "",
+        "Data de Abertura":  emp.get("data_inicio_atividade", ""),
+        "CNAE Principal":    str(emp.get("cnae_fiscal", "")),
+        "Descrição CNAE":    emp.get("cnae_fiscal_descricao", ""),
     }
 
 
@@ -352,6 +341,22 @@ st.markdown('<p class="sub-title">Encontre empresas que podem contratar locaçã
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.header("⚙️ Filtros de Busca")
+
+    # ── Token Brasil.io ──────────────────────────────────────────
+    brasilio_token = st.text_input(
+        "🔑 Token Brasil.io:",
+        type="password",
+        help="Necessário para buscar empresas. Gratuito em brasil.io/auth/tokens-api/",
+        placeholder="Cole seu token aqui"
+    )
+    if not brasilio_token.strip():
+        st.warning(
+            "⚠️ Token necessário para buscar.\n\n"
+            "1. Acesse [brasil.io/auth/tokens-api](https://brasil.io/auth/tokens-api/)\n"
+            "2. Crie uma conta gratuita\n"
+            "3. Copie o token e cole aqui"
+        )
+    st.divider()
     aba = st.radio("Modo:", ["🔍 Buscar por Segmento / CNAE", "🏢 Consultar CNPJ", "🗺️ Google Maps"])
 
     if aba == "🔍 Buscar por Segmento / CNAE":
@@ -464,11 +469,11 @@ if aba == "🔍 Buscar por Segmento / CNAE" and btn_buscar:
         for pg in range(1, paginas + 1):
             op += 1
             barra.progress(op / total_ops, text=f"CNAE {cnae_iter} — página {pg}/{paginas}…")
-            resultados, erro = buscar_por_cnae(cnae_iter, municipio, estado, pg)
+            resultados, erro = buscar_por_cnae(cnae_iter, municipio, estado, pg, brasilio_token)
             todas.extend(resultados)
             if erro:
                 erros_api.append(f"CNAE {cnae_iter} p.{pg}: {erro}")
-            time.sleep(1.2)
+            time.sleep(1.0)
     barra.empty()
 
     if erros_api:
@@ -480,7 +485,7 @@ if aba == "🔍 Buscar por Segmento / CNAE" and btn_buscar:
         st.error("Nenhuma empresa encontrada. Tente outro CNAE, município ou estado.")
         st.stop()
 
-    df = pd.DataFrame([formatar_cnpjws(e) for e in todas])
+    df = pd.DataFrame([formatar_brasilio(e) for e in todas])
     df = df.drop_duplicates(subset=["CNPJ"])  # remove duplicatas entre CNAEs
 
     # ── Métricas ──────────────────────────────────────────────────────────────
