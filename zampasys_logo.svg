@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 160" role="img" aria-labelledby="title">
+  <title id="title">ZampaSys</title>
+  <rect x="4" y="8" width="144" height="144" rx="34" fill="#14263D"/>
+  <path d="M40 49h72L43 111h72" fill="none" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M103 49h12v23" fill="none" stroke="#25B9B0" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="116" cy="111" r="8" fill="#25B9B0"/>
+  <text x="178" y="104" font-family="Arial, Helvetica, sans-serif" font-size="67" font-weight="700" letter-spacing="-2" fill="#14263D">Zampa<tspan fill="#168F92">Sys</tspan></text>
+</svg>

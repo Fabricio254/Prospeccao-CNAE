@@ -5,10 +5,16 @@ import pandas as pd
 import time
 import re
 import io
+import base64
+from pathlib import Path
+
+_LOGO_DATA_URI = "data:image/svg+xml;base64," + base64.b64encode(
+    Path(__file__).with_name("zampasys_logo.svg").read_bytes()
+).decode("ascii")
 
 st.set_page_config(
-    page_title="Locvix — Prospecção de Clientes",
-    page_icon="🏗️",
+    page_title="ZampaSys — Prospecção de Clientes",
+    page_icon=str(Path(__file__).with_name("zampasys_icon.png")),
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -39,9 +45,8 @@ if not st.session_state.autenticado:
                          4px 0 12px rgba(0,0,0,.05),
                         -4px 0 12px rgba(0,0,0,.05);
         }
-        .lv-icon  { font-size: 3rem; display: block; margin-bottom: 0.35rem; }
-        .lv-title { font-size: 1.85rem; font-weight: 700; color: #e67e22;
-                    margin: 0 0 0.15rem 0; }
+        .lv-logo  { display: block; width: min(100%, 250px); height: auto;
+                    margin: 0 auto 0.75rem; }
         .lv-sub   { font-size: 0.875rem; color: #999; margin: 0 0 0.8rem 0; }
         .lv-hr    { border: none; border-top: 1px solid #efefef; margin: 0; }
         /* Base do card — cantos inferiores arredondados */
@@ -62,10 +67,9 @@ if not st.session_state.autenticado:
     """, unsafe_allow_html=True)
     _, col_c, _ = st.columns([1, 1, 1])
     with col_c:
-        st.markdown("""
+        st.markdown(f"""
         <div class="lv-head">
-            <span class="lv-icon">🏗️</span>
-            <p class="lv-title">Locvix</p>
+            <img class="lv-logo" src="{_LOGO_DATA_URI}" alt="ZampaSys">
             <p class="lv-sub">Prospecção de Clientes</p>
             <hr class="lv-hr">
         </div>
@@ -644,7 +648,7 @@ def buscar_google_maps(termo: str, cidade: str, estado: str, api_key: str, proxi
 # INTERFACE
 # ══════════════════════════════════════════════════════════════════════════════
 
-st.markdown('<p class="main-title">🏗️ Locvix — Prospecção de Clientes</p>', unsafe_allow_html=True)
+st.markdown(f'<p class="main-title"><img src="{_LOGO_DATA_URI}" alt="ZampaSys" style="height:48px;vertical-align:middle;margin-right:8px"> — Prospecção de Clientes</p>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">Encontre empresas que podem contratar locação de guindastes e maquinário pesado</p>', unsafe_allow_html=True)
 st.markdown('<p style="font-size:0.78rem; color:#888; margin-top:-0.8rem; margin-bottom:1rem;">Desenvolvido por Fabrício Zamprogno</p>', unsafe_allow_html=True)
 
