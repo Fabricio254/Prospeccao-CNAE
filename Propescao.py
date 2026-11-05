@@ -361,12 +361,12 @@ components.html("""
 """, height=0, scrolling=False)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# GRUPOS DE CNAE — clientes que CONTRATAM guindastes e maquinário pesado
+# GRUPOS DE CNAE — exemplos de setores para busca de empresas
 # ══════════════════════════════════════════════════════════════════════════════
 GRUPOS_CNAE = {
 
     "🏗️ Construção Civil e Obras": {
-        "desc": "Maior mercado: içamento de vigas, lajes, estruturas pré-fabricadas e montagem metálica.",
+        "desc": "Empresas de construção, infraestrutura e serviços especializados.",
         "cnaes": {
             "4120400": "Construção de edifícios",
             "4211101": "Construção de rodovias e ferrovias",
@@ -383,7 +383,7 @@ GRUPOS_CNAE = {
     },
 
     "🏭 Indústria — Manutenção e Instalação": {
-        "desc": "Paradas programadas, instalação/remoção de máquinas pesadas e manutenção industrial.",
+        "desc": "Empresas de fabricação, instalações e manutenção industrial.",
         "cnaes": {
             "3311200": "Manutenção de tanques e reservatórios metálicos",
             "3312102": "Manutenção e reparação de equipamentos para a indústria",
@@ -399,7 +399,7 @@ GRUPOS_CNAE = {
     },
 
     "⚡ Energia — Eólica, Elétrica, Óleo e Gás": {
-        "desc": "Montagem de torres eólicas, instalação de transformadores e manutenção em refinarias.",
+        "desc": "Empresas de geração de energia e atividades ligadas a óleo e gás.",
         "cnaes": {
             "3511501": "Geração de energia elétrica",
             "3511502": "Geração de energia elétrica de origem eólica",
@@ -410,7 +410,7 @@ GRUPOS_CNAE = {
     },
 
     "⛏️ Mineração e Siderurgia": {
-        "desc": "Movimentação contínua de equipamentos pesados em minas, usinas e fundições.",
+        "desc": "Empresas de extração mineral, siderurgia e metalurgia.",
         "cnaes": {
             "0710301": "Extração de minério de ferro",
             "0721901": "Extração de minério de alumínio",
@@ -428,23 +428,23 @@ GRUPOS_CNAE = {
         }
     },
 
-    "🚛 Transporte Pesado e Logística": {
-        "desc": "Carga/descarga de cargas superdimensionadas, movimentação de contêineres e máquinas.",
+    "🚛 Transporte e Logística": {
+        "desc": "Empresas de transporte, terminais e agenciamento de cargas.",
         "cnaes": {
             "5231101": "Administração de portos e terminais",
             "5250801": "Agenciamento de cargas",
         }
     },
 
-    "🌾 Agronegócio — Silos e Maquinário": {
-        "desc": "Instalação de silos, movimentação de colheitadeiras e manutenção de irrigação.",
+    "🌾 Agroindústria e Alimentos": {
+        "desc": "Empresas ligadas à produção agroindustrial e de alimentos.",
         "cnaes": {
             "1011201": "Frigorífico — abate de bovinos",
         }
     },
 
     "🎪 Eventos, Palcos e Estruturas Temporárias": {
-        "desc": "Montagem de palcos, estruturas metálicas e equipamentos em grandes eventos.",
+        "desc": "Empresas de organização de eventos e serviços relacionados.",
         "cnaes": {
             "8230001": "Organização de feiras, congressos, exposições e festas",
             "9001906": "Atividades de sonorização e de iluminação",
@@ -452,8 +452,8 @@ GRUPOS_CNAE = {
         }
     },
 
-    "🏢 Portos e Terminais — Espírito Santo": {
-        "desc": "Portos de Vitória, Tubarão e Praia Mole — alta demanda por guindastes na região ES.",
+    "🏢 Portos e Terminais": {
+        "desc": "Empresas de operação portuária, terminais e serviços marítimos.",
         "cnaes": {
             "5231101": "Administração de portos e terminais",
             "5231102": "Operações de terminais",
@@ -466,7 +466,7 @@ GRUPOS_CNAE = {
     },
 
     "🏛️ Engenharia Civil e Arquitetura": {
-        "desc": "Escritórios de engenharia e arquitetura contratam guindastes para obras, montagens e projetos de grande porte.",
+        "desc": "Empresas de engenharia, arquitetura e serviços técnicos relacionados.",
         "cnaes": {
             "7112000": "Serviços de engenharia",
             "7111100": "Serviços de arquitetura",
@@ -628,8 +628,9 @@ def buscar_google_maps(termo: str, cidade: str, estado: str, api_key: str, proxi
     if proximo_token:
         params = {"pagetoken": proximo_token, "key": api_key}
     else:
+        localizacao = ", ".join(p for p in (cidade, estado, "Brasil") if p)
         params = {
-            "query":    f"{termo} em {cidade} {estado} Brasil",
+            "query":    f"{termo} em {localizacao}",
             "key":      api_key,
             "language": "pt-BR",
             "region":   "br",
@@ -644,12 +645,33 @@ def buscar_google_maps(termo: str, cidade: str, estado: str, api_key: str, proxi
     return [], None
 
 
+def sugestao_abordagem(emp: dict, nome_empresa: str, oferta_empresa: str, desc: str = "") -> str:
+    """Monta uma abordagem comercial aplicável a qualquer setor."""
+    setor = emp.get("Descrição CNAE") or desc or "atividade não informada"
+    apresentacao = nome_empresa.strip() or "sua empresa"
+    oferta = oferta_empresa.strip() or "seus produtos ou serviços"
+    return f"""
+A **{emp['Razão Social']}** atua em **{setor}** e está localizada em
+**{emp['Município']} / {emp['UF']}**.
+
+**Como abordar:**
+- Apresente {apresentacao} e explique como {oferta} pode atender à empresa.
+- Pergunte sobre necessidades atuais, prioridades e critérios de compra.
+- Relacione sua oferta a uma necessidade identificada.
+- Combine um próximo passo, como reunião, demonstração ou proposta.
+
+**Contato sugerido:**
+📞 {emp['Telefone 1'] or emp['Telefone 2'] or '(sem telefone cadastrado)'}
+📧 {emp['Email'] or '(sem e-mail cadastrado)'}
+"""
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # INTERFACE
 # ══════════════════════════════════════════════════════════════════════════════
 
 st.markdown(f'<p class="main-title"><img src="{_LOGO_DATA_URI}" alt="ZampaSys" style="height:48px;vertical-align:middle;margin-right:8px"> — Prospecção de Clientes</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Encontre empresas que podem contratar locação de guindastes e maquinário pesado</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">Encontre empresas por setor, CNAE, CNPJ ou localização para novas oportunidades de negócio.</p>', unsafe_allow_html=True)
 st.markdown('<p style="font-size:0.78rem; color:#888; margin-top:-0.8rem; margin-bottom:1rem;">Desenvolvido por Fabrício Zamprogno</p>', unsafe_allow_html=True)
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
@@ -657,6 +679,9 @@ with st.sidebar:
     st.header("⚙️ Filtros de Busca")
 
     st.caption("📡 Dados: minhareceita.org (Receita Federal — gratuito, sem token)")
+    with st.expander("🏢 Personalizar abordagem (opcional)"):
+        nome_empresa = st.text_input("Nome da sua empresa:", placeholder="Ex: ZampaSys")
+        oferta_empresa = st.text_input("Produto ou serviço oferecido:", placeholder="Ex: soluções de gestão")
     st.divider()
     aba = st.radio("Modo:", ["🔍 Buscar por Segmento / CNAE", "🏢 Consultar CNPJ", "🗺️ Google Maps"])
 
@@ -664,11 +689,11 @@ with st.sidebar:
 
         modo = st.radio(
             "Selecionar CNAE por:",
-            ["🎯 Segmento (recomendado)", "✏️ Código Manual"]
+            ["✏️ Informar CNAEs", "🎯 Segmentos sugeridos"]
         )
 
-        if modo == "🎯 Segmento (recomendado)":
-            segmento = st.selectbox("Segmento:", list(GRUPOS_CNAE.keys()))
+        if modo == "🎯 Segmentos sugeridos":
+            segmento = st.selectbox("Setor de atividade:", list(GRUPOS_CNAE.keys()))
             cnaes_seg = GRUPOS_CNAE[segmento]["cnaes"]
             st.markdown(
                 f'<div class="tag-seg">📌 {GRUPOS_CNAE[segmento]["desc"]}</div>',
@@ -679,22 +704,28 @@ with st.sidebar:
                 list(cnaes_seg.keys()),
                 default=list(cnaes_seg.keys()),
                 format_func=lambda x: f"{x} — {cnaes_seg[x]}",
-                help="Todos pré-selecionados. Desmarque os que não desejar."
+                help="Desmarque os CNAEs que não deseja incluir."
             )
             if not cnae_final:
                 st.warning("Selecione ao menos um CNAE.")
         else:
-            segmento = ""
-            cnae_final = st.text_input("Código CNAE:", placeholder="Ex: 4292801").strip()
+            segmento = "CNAEs informados"
+            codigos_cnae = st.text_input(
+                "CNAEs (separados por vírgula):",
+                placeholder="Ex: 6201501, 4711302",
+                help="Informe um ou mais códigos CNAE de 7 dígitos."
+            )
+            cnae_final = list(dict.fromkeys(
+                codigo.strip() for codigo in codigos_cnae.split(",") if codigo.strip()
+            ))
             if not cnae_final:
-                st.warning("Digite um código CNAE.")
+                st.info("Informe ao menos um CNAE para iniciar a busca.")
 
         st.divider()
-        municipio = st.text_input("Município:", placeholder="Ex: SERRA")
-        idx_es    = ESTADOS.index("ES")
-        estado    = st.selectbox("Estado:", ESTADOS, index=idx_es)
-        paginas   = st.slider("Páginas de resultado:", 1, 10, 3,
-                              help="Cada página = até 20 empresas")
+        municipio = st.text_input("Município:", placeholder="Opcional: cidade")
+        estado = st.selectbox("Estado:", ESTADOS, format_func=lambda uf: uf or "Todos os estados")
+        paginas = st.slider("Páginas de resultado:", 1, 10, 3,
+                            help="Cada página = até 20 empresas")
         st.divider()
         btn_buscar = st.button("🔍 Buscar Empresas", type="primary", use_container_width=True)
 
@@ -711,31 +742,37 @@ with st.sidebar:
         )
 
         TERMOS_MAPS = {
-            "🏗️ Construtoras e incorporadoras":  "construtora",
-            "🏛️ Engenharia civil e arquitetura":  "escritório de engenharia civil",
-            "🏭 Indústrias e manutenção":         "indústria manutenção industrial",
-            "⚡ Energia e utilities":              "empresa de energia instalação elétrica",
-            "⛏️ Mineração e siderurgia":           "mineração siderurgia empresa",
-            "🚛 Transporte pesado":               "transportadora carga pesada",
-            "🏢 Portos e terminais":               "porto terminal portuário",
-            "🎪 Eventos e estruturas temporárias": "empresa de eventos estrutura temporária",
-            "✏️ Personalizado":                   None,
+            "✏️ Personalizado":             None,
+            "🛒 Comércio e varejo":         "lojas e comércio",
+            "🩺 Saúde":                     "clínicas e serviços de saúde",
+            "🎓 Educação":                  "escolas e cursos",
+            "💻 Tecnologia":                "empresas de tecnologia",
+            "🍽️ Alimentação":              "restaurantes e alimentação",
+            "🏢 Serviços profissionais":    "empresas de serviços profissionais",
+            "🏭 Indústria":                 "indústrias",
+            "🏗️ Construção":               "construtoras",
+            "🚛 Transporte e logística":    "transportadoras e logística",
+            "🌾 Agronegócio":               "empresas do agronegócio",
         }
 
         maps_categoria = st.selectbox("Categoria:", list(TERMOS_MAPS.keys()))
 
         if TERMOS_MAPS[maps_categoria] is None:
-            maps_termo = st.text_input("Termo de busca:", placeholder="Ex: empresa de guindastes").strip()
+            maps_termo = st.text_input(
+                "Termo de busca:", placeholder="Ex: clínicas odontológicas, lojas de móveis"
+            ).strip()
         else:
             maps_termo = TERMOS_MAPS[maps_categoria]
             st.caption(f"🔎 Buscando: *{maps_termo}*")
 
         st.divider()
-        municipio_maps = st.text_input("Cidade:", placeholder="Ex: Serra", value="Serra")
-        idx_es_maps    = ESTADOS.index("ES")
-        estado_maps    = st.selectbox("Estado:", ESTADOS, index=idx_es_maps, key="estado_maps")
-        paginas_maps   = st.slider("Páginas (API Key):", 1, 5, 2,
-                                   help="Cada página = até 20 resultados. Requer API Key.")
+        municipio_maps = st.text_input("Cidade:", placeholder="Opcional: cidade")
+        estado_maps = st.selectbox(
+            "Estado:", ESTADOS, key="estado_maps",
+            format_func=lambda uf: uf or "Todos os estados"
+        )
+        paginas_maps = st.slider("Páginas (API Key):", 1, 5, 2,
+                                 help="Cada página = até 20 resultados. Requer API Key.")
         st.divider()
         btn_maps = st.button("🗺️ Buscar no Maps", type="primary", use_container_width=True)
 
@@ -745,11 +782,17 @@ with st.sidebar:
 # ══════════════════════════════════════════════════════════════════════════════
 if aba == "🔍 Buscar por Segmento / CNAE" and btn_buscar:
 
-    # Normaliza: modo manual retorna str, modo segmento retorna lista
-    cnaes_buscar = [cnae_final] if isinstance(cnae_final, str) else list(cnae_final)
+    cnaes_buscar = list(cnae_final)
 
-    if not cnaes_buscar or (len(cnaes_buscar) == 1 and not cnaes_buscar[0]):
+    if not cnaes_buscar:
         st.error("Selecione ou informe um CNAE antes de buscar.")
+        st.stop()
+    if municipio.strip() and not estado:
+        st.error("Selecione o estado ao informar um município.")
+        st.stop()
+    invalidos = [codigo for codigo in cnaes_buscar if not re.fullmatch(r"\d{7}", codigo)]
+    if invalidos:
+        st.error("Informe códigos CNAE com exatamente 7 dígitos, separados por vírgula.")
         st.stop()
 
     if len(cnaes_buscar) == 1:
@@ -759,7 +802,7 @@ if aba == "🔍 Buscar por Segmento / CNAE" and btn_buscar:
     else:
         desc = segmento
         st.info(f"🔍 Buscando **{len(cnaes_buscar)} CNAEs** do segmento **{segmento}**")
-        nome_export = segmento.replace(" ", "_")[:30]
+        nome_export = re.sub(r"[^\w-]+", "_", segmento).strip("_")[:30]
 
     todas = []
     erros_api: list = []
@@ -859,20 +902,7 @@ if aba == "🔍 Buscar por Segmento / CNAE" and btn_buscar:
                         st.write(f"**{k}:** {v}")
 
             with st.expander("💡 Sugestão de abordagem comercial"):
-                st.markdown(f"""
-A **{emp['Razão Social']}** é uma empresa do setor **{emp['Descrição CNAE'] or desc}**, localizada em
-**{emp['Município']} / {emp['UF']}**.
-
-**Como abordar:**
-- Apresente a Locvix como especialista em locação de guindastes e maquinário pesado na região ES
-- Destaque disponibilidade imediata, frota variada e suporte técnico
-- Pergunte sobre próximas obras / paradas programadas / projetos de expansão
-- Ofereça visita técnica sem compromisso
-
-**Contato sugerido:**
-📞 {emp['Telefone 1'] or emp['Telefone 2'] or '(sem telefone cadastrado)'}
-📧 {emp['Email'] or '(sem e-mail cadastrado)'}
-""")
+                st.markdown(sugestao_abordagem(emp, nome_empresa, oferta_empresa, desc))
         else:
             st.warning("Não foi possível obter detalhes deste CNPJ agora.")
 
@@ -883,14 +913,14 @@ A **{emp['Razão Social']}** é uma empresa do setor **{emp['Descrição CNAE'] 
 
     csv = df_vis.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig")
     col_dl1.download_button("⬇️ Baixar CSV",
-        csv, f"locvix_prospects_{nome_export}.csv", "text/csv",
+        csv, f"zampasys_prospects_{nome_export}.csv", "text/csv",
         use_container_width=True)
 
     buf = io.BytesIO()
     with pd.ExcelWriter(buf, engine="openpyxl") as w:
         df_vis.to_excel(w, index=False, sheet_name="Prospects")
     col_dl2.download_button("⬇️ Baixar Excel",
-        buf.getvalue(), f"locvix_prospects_{nome_export}.xlsx",
+        buf.getvalue(), f"zampasys_prospects_{nome_export}.xlsx",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True)
 
@@ -946,26 +976,13 @@ elif aba == "🏢 Consultar CNPJ" and btn_cnpj:
                 st.write(f"- {s.get('codigo','')} — {s.get('descricao','')}")
 
     with st.expander("💡 Sugestão de abordagem comercial"):
-        st.markdown(f"""
-A **{emp['Razão Social']}** está localizada em **{emp['Município']} / {emp['UF']}**
-e atua em **{emp['Descrição CNAE']}**.
-
-**Como abordar:**
-- Apresente a Locvix como especialista em locação de guindastes e maquinário pesado na região ES
-- Destaque disponibilidade imediata, frota variada e suporte técnico
-- Pergunte sobre próximas obras / paradas programadas / projetos de expansão
-- Ofereça visita técnica sem compromisso
-
-**Contato sugerido:**
-📞 {emp['Telefone 1'] or emp['Telefone 2'] or '(sem telefone cadastrado)'}
-📧 {emp['Email'] or '(sem e-mail cadastrado)'}
-""")
+        st.markdown(sugestao_abordagem(emp, nome_empresa, oferta_empresa))
 
     st.divider()
     buf2 = io.BytesIO()
     pd.DataFrame([emp]).to_excel(buf2, index=False, sheet_name="CNPJ")
     st.download_button("⬇️ Baixar Excel", buf2.getvalue(),
-        f"locvix_cnpj_{cnpj_limpo}.xlsx",
+        f"zampasys_cnpj_{cnpj_limpo}.xlsx",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True)
 
@@ -979,7 +996,11 @@ elif aba == "🗺️ Google Maps" and btn_maps:
         st.error("Selecione uma categoria ou digite um termo de busca.")
         st.stop()
 
-    cidade_exib = f"{municipio_maps.strip() or estado_maps} / {estado_maps}"
+    if municipio_maps.strip() and not estado_maps:
+        st.error("Selecione o estado ao informar uma cidade.")
+        st.stop()
+    cidade_exib = ", ".join(p for p in (municipio_maps.strip(), estado_maps) if p) or "Brasil"
+    nome_maps_export = re.sub(r"[^\w-]+", "_", maps_termo).strip("_")[:30] or "busca"
     st.info(f"🗺️ Buscando **{maps_termo}** em **{cidade_exib}**")
 
     if maps_api_key.strip():
@@ -1042,10 +1063,10 @@ elif aba == "🗺️ Google Maps" and btn_maps:
                 df_maps.to_excel(w, index=False, sheet_name="GoogleMaps")
             col1, col2 = st.columns(2)
             col1.download_button("⬇️ Baixar CSV",
-                csv_m, f"locvix_maps_{maps_termo[:20]}.csv", "text/csv",
+                csv_m, f"zampasys_maps_{nome_maps_export}.csv", "text/csv",
                 use_container_width=True)
             col2.download_button("⬇️ Baixar Excel",
-                buf_m.getvalue(), f"locvix_maps_{maps_termo[:20]}.xlsx",
+                buf_m.getvalue(), f"zampasys_maps_{nome_maps_export}.xlsx",
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True)
 
@@ -1055,39 +1076,31 @@ elif aba == "🗺️ Google Maps" and btn_maps:
         st.markdown("Clique para abrir a busca diretamente no Google Maps:")
         st.divider()
 
-        termo_enc  = maps_termo.replace(" ", "+")
-        cidade_enc = (municipio_maps.strip() or estado_maps).replace(" ", "+")
-        uf_enc     = estado_maps
+        from urllib.parse import quote_plus
 
-        url_cidade = f"https://www.google.com/maps/search/{termo_enc}+em+{cidade_enc}+{uf_enc}"
-        url_estado = f"https://www.google.com/maps/search/{termo_enc}+em+{uf_enc}+Brasil"
+        local_cidade = ", ".join(
+            p for p in (municipio_maps.strip(), estado_maps, "Brasil") if p
+        )
+        local_estado = ", ".join(p for p in (estado_maps, "Brasil") if p)
+        url_cidade = (
+            "https://www.google.com/maps/search/?api=1&query="
+            + quote_plus(f"{maps_termo} em {local_cidade}")
+        )
+        url_estado = (
+            "https://www.google.com/maps/search/?api=1&query="
+            + quote_plus(f"{maps_termo} em {local_estado}")
+        )
 
         col_a, col_b = st.columns(2)
         col_a.link_button(
-            f"🗺️ {maps_termo.title()} em {municipio_maps.strip() or uf_enc}",
+            f"🗺️ {maps_termo.title()} em {municipio_maps.strip() or estado_maps or 'Brasil'}",
             url_cidade, use_container_width=True, type="primary"
         )
-        col_b.link_button(
-            f"🗺️ {maps_termo.title()} no estado {uf_enc}",
-            url_estado, use_container_width=True
-        )
-
-        st.divider()
-        st.markdown("**Outras buscas relacionadas (Locvix):**")
-        termos_rel = [
-            "construtora obras",
-            "escritório de engenharia civil",
-            "indústria manutenção guindaste",
-            "empresa movimentação de cargas",
-            "mineração siderurgia",
-            "transportadora carga pesada",
-            "porto terminal logística",
-        ]
-        for _t in termos_rel:
-            _enc = _t.replace(" ", "+")
-            _url = f"https://www.google.com/maps/search/{_enc}+em+{cidade_enc}+{uf_enc}"
-            st.link_button(f"🔍 {_t.title()} — {municipio_maps.strip() or uf_enc}",
-                           _url, use_container_width=True)
+        if municipio_maps.strip():
+            col_b.link_button(
+                f"🗺️ {maps_termo.title()} em {estado_maps or 'todo o Brasil'}",
+                url_estado, use_container_width=True
+            )
 
         st.divider()
         st.info("💡 Para ver os resultados **dentro do app** com dados completos, "
