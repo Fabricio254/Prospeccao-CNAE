@@ -478,6 +478,47 @@ GRUPOS_CNAE = {
             "4213800": "Obras de urbanização — ruas, praças e calçadas",
         }
     },
+
+    "🧾 Escritórios de Contabilidade": {
+        "desc": "Escritórios contábeis e empresas que prestam serviços de contabilidade.",
+        "cnaes": {
+            "6920601": "Atividades de contabilidade",
+            "6920602": "Atividades de consultoria e auditoria contábil e tributária",
+        }
+    },
+
+    "🏨 Hotéis e Apart-hotéis": {
+        "desc": "Hotéis e apart-hotéis cadastrados nestas subclasses CNAE.",
+        "cnaes": {
+            "5510801": "Hotéis",
+            "5510802": "Apart-hotéis",
+        }
+    },
+
+    "🏢 Administradoras de Condomínios": {
+        "desc": "Empresas de gestão e administração de imóveis e condomínios.",
+        "cnaes": {
+            "6822600": "Gestão e administração da propriedade imobiliária",
+        }
+    },
+
+    "🎓 Escolas Particulares": {
+        "desc": (
+            "Instituições de educação infantil, básica, superior e profissional. "
+            "O CNAE não identifica sozinho se a escola é particular; confirme o cadastro."
+        ),
+        "cnaes": {
+            "8511200": "Educação infantil — creche",
+            "8512100": "Educação infantil — pré-escola",
+            "8513900": "Ensino fundamental",
+            "8520100": "Ensino médio",
+            "8531700": "Educação superior — graduação",
+            "8532500": "Educação superior — graduação e pós-graduação",
+            "8533300": "Educação superior — pós-graduação e extensão",
+            "8541400": "Educação profissional de nível técnico",
+            "8542200": "Educação profissional de nível tecnológico",
+        }
+    },
 }
 
 # ── Dicionário plano com todos os CNAEs dos grupos ───────────────────────────
