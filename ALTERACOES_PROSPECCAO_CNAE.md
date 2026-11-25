@@ -50,6 +50,21 @@ mas não são filtrados nem verificados pelo código CNAE. Em particular, confir
 se escolas são particulares e se empresas de imóveis realmente administram
 condomínios.
 
+## Relatório Google Maps dentro do aplicativo
+
+O modo Google Maps agora exige uma Places API Key para iniciar a busca. Sem uma
+chave, o app informa o que falta e não exibe links que desviem para uma busca
+externa. Com a chave, os resultados são exibidos na página como relatório
+tabular, com contadores, filtros para estabelecimentos operando/com avaliação
+e opções de exportação CSV e Excel. As exportações refletem os filtros
+selecionados.
+
+O relatório inclui nome, endereço, avaliação, quantidade de avaliações e
+situação operacional, que são os campos retornados pela busca textual atual.
+Não inclui telefone, e-mail ou CNPJ. O uso da Google Places API pode gerar
+cobranças conforme as condições e o volume de consultas da conta Google.
+Respostas como chave inválida e outros erros da API são apresentadas no app.
+
 ### Grupos e códigos incluídos
 
 | Setor | CNAE | Atividade |
@@ -111,5 +126,10 @@ login nesta sessão.
   catálogo e na lista agregada de CNAEs.
 - [x] Teste de que os 13 grupos CNAE têm exatamente um termo de busca Maps e
   nenhum segmento ficou faltando.
+- [x] Testes simulados do cliente Places API para sucesso, zero resultados,
+  chave recusada e falha HTTP.
+- [x] Verificação sintática do arquivo e validação de `git diff --check`.
+- [ ] Teste real no Google Maps com uma Places API Key; a chamada pode gerar
+  cobrança e não foi executada nesta validação.
 - [x] Publicação na branch `main` e verificação de que a aplicação responde.
 - [ ] Conferência dos novos segmentos dentro da interface autenticada.

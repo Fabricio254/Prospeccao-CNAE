@@ -695,12 +695,21 @@ def buscar_google_maps(termo: str, cidade: str, estado: str, api_key: str, proxi
         }
     try:
         r = requests.get(url, params=params, timeout=20)
-        if r.status_code == 200:
-            data = r.json()
-            return data.get("results", []), data.get("next_page_token")
-    except Exception:
-        pass
-    return [], None
+        r.raise_for_status()
+        data = r.json()
+    except requests.RequestException as exc:
+        return [], None, f"Falha na consulta ao Google Maps: {exc}"
+    except ValueError as exc:
+        return [], None, f"Resposta inválida do Google Maps: {exc}"
+
+    status = data.get("status", "")
+    if status == "OK":
+        return data.get("results", []), data.get("next_page_token"), None
+    if status == "ZERO_RESULTS":
+        return [], None, None
+
+    detalhe = data.get("error_message") or "Verifique a chave e as permissões da Places API."
+    return [], None, f"Google Maps API ({status or 'erro'}): {detalhe}"
 
 
 def sugestao_abordagem(emp: dict, nome_empresa: str, oferta_empresa: str, desc: str = "") -> str:
@@ -794,10 +803,11 @@ with st.sidebar:
     else:  # Google Maps
         st.markdown("**🗺️ Busca no Google Maps**")
         maps_api_key = st.text_input(
-            "Chave API Google Maps (opcional):",
+            "Chave API Google Maps Places:",
             type="password",
-            help="Sem chave: abre links de busca. Com a Places API Key: mostra resultados aqui no app."
+            help="Obrigatória para gerar o relatório dentro do app. O uso da Places API pode gerar cobrança."
         )
+        st.caption("A busca gera o relatório nesta página; não abre uma página externa do Google Maps.")
 
         TERMOS_MAPS = {
             "✏️ Personalizado":             None,
@@ -1054,6 +1064,12 @@ elif aba == "🗺️ Google Maps" and btn_maps:
     if not maps_termo:
         st.error("Selecione uma categoria ou digite um termo de busca.")
         st.stop()
+    if not maps_api_key.strip():
+        st.error(
+            "Para gerar o relatório dentro do aplicativo, informe uma Google Maps "
+            "Places API Key na barra lateral. A busca não abrirá o Google Maps externo."
+        )
+        st.stop()
 
     if municipio_maps.strip() and not estado_maps:
         st.error("Selecione o estado ao informar uma cidade.")
@@ -1062,105 +1078,98 @@ elif aba == "🗺️ Google Maps" and btn_maps:
     nome_maps_export = re.sub(r"[^\w-]+", "_", maps_termo).strip("_")[:30] or "busca"
     st.info(f"🗺️ Buscando **{maps_termo}** em **{cidade_exib}**")
 
-    if maps_api_key.strip():
-        # ── Busca via Places API ──────────────────────────────────────────────
-        todas_maps: list = []
-        proximo_token = None
-        barra_m = st.progress(0, text="Consultando Google Maps API…")
+    # ── Busca via Places API e geração do relatório dentro do app ─────────────
+    todas_maps: list = []
+    erros_maps: list[str] = []
+    proximo_token = None
+    barra_m = st.progress(0, text="Consultando Google Maps API…")
 
-        for i in range(1, paginas_maps + 1):
-            barra_m.progress(i / paginas_maps, text=f"Página {i} de {paginas_maps}…")
-            resultados, proximo_token = buscar_google_maps(
-                maps_termo,
-                municipio_maps.strip() or estado_maps,
-                estado_maps,
-                maps_api_key.strip(),
-                proximo_token,
-            )
-            todas_maps.extend(resultados)
-            if not proximo_token:
-                break
-            if i < paginas_maps:
-                time.sleep(2)   # Places API exige ~2 s antes de usar next_page_token
+    for i in range(1, paginas_maps + 1):
+        barra_m.progress(i / paginas_maps, text=f"Página {i} de {paginas_maps}…")
+        resultados, proximo_token, erro_maps = buscar_google_maps(
+            maps_termo,
+            municipio_maps.strip() or estado_maps,
+            estado_maps,
+            maps_api_key.strip(),
+            proximo_token,
+        )
+        todas_maps.extend(resultados)
+        if erro_maps:
+            erros_maps.append(erro_maps)
+            break
+        if not proximo_token:
+            break
+        if i < paginas_maps:
+            time.sleep(2)   # Places API exige ~2 s antes de usar next_page_token
 
-        barra_m.empty()
+    barra_m.empty()
 
-        if not todas_maps:
-            st.warning("Nenhum resultado encontrado. Verifique a API key e os termos de busca.")
-        else:
-            linhas = []
-            for p in todas_maps:
-                place_id = p.get("place_id", "")
-                linhas.append({
-                    "Nome":        p.get("name", ""),
-                    "Endereço":    p.get("formatted_address", ""),
-                    "Avaliação":   p.get("rating", ""),
-                    "Avaliações":  p.get("user_ratings_total", ""),
-                    "Status":      p.get("business_status", ""),
-                    "Google Maps": f"https://www.google.com/maps/place/?q=place_id:{place_id}" if place_id else "",
-                })
-            df_maps = pd.DataFrame(linhas)
-
-            c1, c2, c3 = st.columns(3)
-            c1.metric("Total encontrado", len(df_maps))
-            c2.metric("Com avaliação",    int((df_maps["Avaliação"] != "").sum()))
-            c3.metric("Operando",         int((df_maps["Status"] == "OPERATIONAL").sum()))
-
-            st.dataframe(
-                df_maps,
-                use_container_width=True,
-                height=480,
-                column_config={
-                    "Google Maps": st.column_config.LinkColumn("Google Maps"),
-                }
-            )
-
-            st.divider()
-            csv_m = df_maps.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig")
-            buf_m = io.BytesIO()
-            with pd.ExcelWriter(buf_m, engine="openpyxl") as w:
-                df_maps.to_excel(w, index=False, sheet_name="GoogleMaps")
-            col1, col2 = st.columns(2)
-            col1.download_button("⬇️ Baixar CSV",
-                csv_m, f"zampasys_maps_{nome_maps_export}.csv", "text/csv",
-                use_container_width=True)
-            col2.download_button("⬇️ Baixar Excel",
-                buf_m.getvalue(), f"zampasys_maps_{nome_maps_export}.xlsx",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True)
-
+    if erros_maps:
+        for erro in erros_maps:
+            st.error(erro)
+    elif not todas_maps:
+        st.warning("Nenhum estabelecimento encontrado para esses filtros.")
     else:
-        # ── Sem API Key: gerar links de busca ─────────────────────────────────
-        st.markdown("### 🔗 Links de Busca no Google Maps")
-        st.markdown("Clique para abrir a busca diretamente no Google Maps:")
-        st.divider()
+        linhas = []
+        for p in todas_maps:
+            linhas.append({
+                "Nome":        p.get("name", ""),
+                "Endereço":    p.get("formatted_address", ""),
+                "Avaliação":   p.get("rating", ""),
+                "Avaliações":  p.get("user_ratings_total", ""),
+                "Status":      p.get("business_status", ""),
+            })
+        df_maps = pd.DataFrame(linhas).drop_duplicates(subset=["Nome", "Endereço"])
 
-        from urllib.parse import quote_plus
-
-        local_cidade = ", ".join(
-            p for p in (municipio_maps.strip(), estado_maps, "Brasil") if p
-        )
-        local_estado = ", ".join(p for p in (estado_maps, "Brasil") if p)
-        url_cidade = (
-            "https://www.google.com/maps/search/?api=1&query="
-            + quote_plus(f"{maps_termo} em {local_cidade}")
-        )
-        url_estado = (
-            "https://www.google.com/maps/search/?api=1&query="
-            + quote_plus(f"{maps_termo} em {local_estado}")
-        )
-
-        col_a, col_b = st.columns(2)
-        col_a.link_button(
-            f"🗺️ {maps_termo.title()} em {municipio_maps.strip() or estado_maps or 'Brasil'}",
-            url_cidade, use_container_width=True, type="primary"
-        )
-        if municipio_maps.strip():
-            col_b.link_button(
-                f"🗺️ {maps_termo.title()} em {estado_maps or 'todo o Brasil'}",
-                url_estado, use_container_width=True
-            )
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Total encontrado", len(df_maps))
+        c2.metric("Com avaliação", int((df_maps["Avaliação"] != "").sum()))
+        c3.metric("Operando", int((df_maps["Status"] == "OPERATIONAL").sum()))
 
         st.divider()
-        st.info("💡 Para ver os resultados **dentro do app** com dados completos, "
-                "insira uma **Google Maps Places API Key** na barra lateral.")
+        st.subheader("📥 Relatório de prospects — Google Maps")
+        col_filtro1, col_filtro2 = st.columns(2)
+        apenas_operando = col_filtro1.checkbox("Apenas estabelecimentos operando", value=False)
+        apenas_avaliados = col_filtro2.checkbox("Apenas com avaliação", value=False)
+
+        df_vis_maps = df_maps.copy()
+        if apenas_operando:
+            df_vis_maps = df_vis_maps[df_vis_maps["Status"] == "OPERATIONAL"]
+        if apenas_avaliados:
+            df_vis_maps = df_vis_maps[df_vis_maps["Avaliação"] != ""]
+
+        st.markdown(f"**{len(df_vis_maps)} estabelecimentos exibidos**")
+        st.dataframe(
+            df_vis_maps,
+            use_container_width=True,
+            height=520,
+            column_config={
+                "Nome": st.column_config.TextColumn("Nome", width="large"),
+                "Endereço": st.column_config.TextColumn("Endereço", width="large"),
+                "Avaliação": st.column_config.NumberColumn("Avaliação", format="%.1f"),
+                "Avaliações": st.column_config.NumberColumn("Nº de avaliações"),
+                "Status": st.column_config.TextColumn("Situação", width="medium"),
+            }
+        )
+
+        st.divider()
+        st.subheader("📥 Exportar relatório")
+        col_dl1, col_dl2 = st.columns(2)
+        csv_m = df_vis_maps.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig")
+        col_dl1.download_button(
+            "⬇️ Baixar CSV",
+            csv_m,
+            f"zampasys_maps_{nome_maps_export}.csv",
+            "text/csv",
+            use_container_width=True,
+        )
+        buf_m = io.BytesIO()
+        with pd.ExcelWriter(buf_m, engine="openpyxl") as w:
+            df_vis_maps.to_excel(w, index=False, sheet_name="GoogleMaps")
+        col_dl2.download_button(
+            "⬇️ Baixar Excel",
+            buf_m.getvalue(),
+            f"zampasys_maps_{nome_maps_export}.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True,
+        )
