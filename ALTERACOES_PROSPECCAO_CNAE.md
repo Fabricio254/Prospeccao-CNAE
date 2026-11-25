@@ -61,10 +61,23 @@ imobiliária em geral; não separa exclusivamente administradoras de condomínio
 
 Nenhuma dependência foi adicionada ou alterada como parte desta implementação.
 
+## Publicação
+
+- Repositório: `Fabricio254/Prospeccao-CNAE`.
+- Branch atualizada: `main`.
+- Commit da aplicação e desta documentação: `37c95cd`
+  (`feat: adicionar setores de prospeccao por CNAE`).
+- Aplicação: <https://prospeccao-cnae.streamlit.app/>.
+
+Após o envio, a URL carregou a tela de autenticação do Streamlit. Os novos
+setores ainda não foram conferidos visualmente após o login; não foi feito
+login nesta sessão.
+
 ## Validação
 
 - [x] Conferência dos códigos e descrições no serviço de subclasses CNAE do IBGE.
 - [x] Verificação sintática do arquivo Python.
 - [x] Teste de que os quatro segmentos e os 14 códigos novos aparecem no
   catálogo e na lista agregada de CNAEs.
-- [ ] Publicação e conferência na aplicação Streamlit.
+- [x] Publicação na branch `main` e verificação de que a aplicação responde.
+- [ ] Conferência dos novos segmentos dentro da interface autenticada.
