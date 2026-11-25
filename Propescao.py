@@ -526,6 +526,23 @@ TODOS_CNAES: dict = {}
 for _g in GRUPOS_CNAE.values():
     TODOS_CNAES.update(_g["cnaes"])
 
+# Termos de pesquisa do Google Maps correspondentes aos segmentos CNAE.
+TERMOS_MAPS_SEGMENTOS = {
+    "🏗️ Construção Civil e Obras": "construtoras e empresas de construção civil",
+    "🏭 Indústria — Manutenção e Instalação": "empresas de manutenção e instalação industrial",
+    "⚡ Energia — Eólica, Elétrica, Óleo e Gás": "empresas de energia, petróleo e gás",
+    "⛏️ Mineração e Siderurgia": "empresas de mineração, siderurgia e metalurgia",
+    "🚛 Transporte e Logística": "transportadoras e empresas de logística",
+    "🌾 Agroindústria e Alimentos": "agroindústrias e fabricantes de alimentos",
+    "🎪 Eventos, Palcos e Estruturas Temporárias": "empresas de eventos, palcos e estruturas temporárias",
+    "🏢 Portos e Terminais": "empresas portuárias, operadores de terminais e serviços marítimos",
+    "🏛️ Engenharia Civil e Arquitetura": "empresas de engenharia civil e escritórios de arquitetura",
+    "🧾 Escritórios de Contabilidade": "escritórios de contabilidade",
+    "🏨 Hotéis e Apart-hotéis": "hotéis e apart-hotéis",
+    "🏢 Administradoras de Condomínios": "administradoras de condomínios",
+    "🎓 Escolas Particulares": "escolas particulares e colégios",
+}
+
 ESTADOS = ["", "AC","AL","AP","AM","BA","CE","DF","ES","GO",
            "MA","MT","MS","MG","PA","PB","PR","PE","PI",
            "RJ","RN","RS","RO","RR","SC","SP","SE","TO"]
@@ -795,6 +812,7 @@ with st.sidebar:
             "🚛 Transporte e logística":    "transportadoras e logística",
             "🌾 Agronegócio":               "empresas do agronegócio",
         }
+        TERMOS_MAPS.update(TERMOS_MAPS_SEGMENTOS)
 
         maps_categoria = st.selectbox("Categoria:", list(TERMOS_MAPS.keys()))
 
