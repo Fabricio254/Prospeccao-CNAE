@@ -50,20 +50,18 @@ mas não são filtrados nem verificados pelo código CNAE. Em particular, confir
 se escolas são particulares e se empresas de imóveis realmente administram
 condomínios.
 
-## Relatório Google Maps dentro do aplicativo
+## Google Maps abre buscas externas
 
-O modo Google Maps agora exige uma Places API Key para iniciar a busca. Sem uma
-chave, o app informa o que falta e não exibe links que desviem para uma busca
-externa. Com a chave, os resultados são exibidos na página como relatório
-tabular, com contadores, filtros para estabelecimentos operando/com avaliação
-e opções de exportação CSV e Excel. As exportações refletem os filtros
-selecionados.
+O fluxo do Google Maps voltou a gerar links de busca, sem Places API Key:
 
-O relatório inclui nome, endereço, avaliação, quantidade de avaliações e
-situação operacional, que são os campos retornados pela busca textual atual.
-Não inclui telefone, e-mail ou CNPJ. O uso da Google Places API pode gerar
-cobranças conforme as condições e o volume de consultas da conta Google.
-Respostas como chave inválida e outros erros da API são apresentadas no app.
+- Um link busca o termo selecionado na cidade e estado informados.
+- Se uma cidade for preenchida, aparece outro link para ampliar a busca ao
+  estado.
+- Os telefones devem ser consultados manualmente nos perfis dos estabelecimentos
+  no Google Maps; a aplicação não coleta nem exporta esses dados.
+
+Esse modo não gera uma tabela de resultados dentro do aplicativo e não usa a
+Places API, portanto não exige a chave nem gera cobranças por chamadas dessa API.
 
 ### Grupos e códigos incluídos
 
@@ -112,7 +110,7 @@ Nenhuma dependência foi adicionada ou alterada como parte desta implementação
   - `37c95cd` — adiciona os novos setores CNAE;
   - `ef80fb8` — registra a publicação;
   - `e636878` — espelha os 13 setores CNAE nas categorias do Google Maps;
-  - `e9448e1` — gera o relatório Google Maps dentro do app.
+  - `e9448e1` — versão anterior que gerava relatório via Places API.
 - Aplicação: <https://prospeccao-cnae.streamlit.app/>.
 
 Após o envio, a URL carregou a tela de autenticação do Streamlit. Os novos
@@ -127,10 +125,8 @@ login nesta sessão.
   catálogo e na lista agregada de CNAEs.
 - [x] Teste de que os 13 grupos CNAE têm exatamente um termo de busca Maps e
   nenhum segmento ficou faltando.
-- [x] Testes simulados do cliente Places API para sucesso, zero resultados,
-  chave recusada e falha HTTP.
+- [x] O modo Google Maps usa links externos e não exige Places API Key.
 - [x] Verificação sintática do arquivo e validação de `git diff --check`.
-- [ ] Teste real no Google Maps com uma Places API Key; a chamada pode gerar
-  cobrança e não foi executada nesta validação.
+- [ ] Conferir links de busca no navegador para algumas categorias e cidades.
 - [x] Publicação na branch `main` e verificação de que a aplicação responde.
 - [ ] Conferência dos novos segmentos dentro da interface autenticada.
