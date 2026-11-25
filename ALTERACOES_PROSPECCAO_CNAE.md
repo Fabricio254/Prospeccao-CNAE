@@ -110,7 +110,8 @@ Nenhuma dependência foi adicionada ou alterada como parte desta implementação
   - `37c95cd` — adiciona os novos setores CNAE;
   - `ef80fb8` — registra a publicação;
   - `e636878` — espelha os 13 setores CNAE nas categorias do Google Maps;
-  - `e9448e1` — versão anterior que gerava relatório via Places API.
+  - `e9448e1` — versão anterior que gerava relatório via Places API;
+  - `f9783d8` — restaura os links externos do Google Maps, sem chave de API.
 - Aplicação: <https://prospeccao-cnae.streamlit.app/>.
 
 Após o envio, a URL carregou a tela de autenticação do Streamlit. Os novos
@@ -126,6 +127,8 @@ login nesta sessão.
 - [x] Teste de que os 13 grupos CNAE têm exatamente um termo de busca Maps e
   nenhum segmento ficou faltando.
 - [x] O modo Google Maps usa links externos e não exige Places API Key.
+- [x] Verificado por teste que os links são montados com a busca e cidade
+  codificadas para URL e que os 13 setores permanecem disponíveis.
 - [x] Verificação sintática do arquivo e validação de `git diff --check`.
 - [ ] Conferir links de busca no navegador para algumas categorias e cidades.
 - [x] Publicação na branch `main` e verificação de que a aplicação responde.
