@@ -96,7 +96,7 @@ Nenhuma dependência foi adicionada ou alterada como parte desta implementação
 - Commits publicados:
   - `37c95cd` — adiciona os novos setores CNAE;
   - `ef80fb8` — registra a publicação;
-  - atualização atual — espelha os 13 setores CNAE nas categorias do Google Maps.
+  - `e636878` — espelha os 13 setores CNAE nas categorias do Google Maps.
 - Aplicação: <https://prospeccao-cnae.streamlit.app/>.
 
 Após o envio, a URL carregou a tela de autenticação do Streamlit. Os novos
